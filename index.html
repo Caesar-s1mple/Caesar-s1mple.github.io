@@ -1,73 +1,534 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Caesar-s1mple 的测试页</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      color: #eee;
-    }
-    .card {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 16px;
-      padding: 48px 64px;
-      text-align: center;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-    h1 { font-size: 1.4rem; font-weight: 500; opacity: 0.8; margin-bottom: 24px; }
-    .equation {
-      font-size: 4rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #4fc3f7, #81c784);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    button {
-      margin-top: 32px;
-      padding: 12px 32px;
-      font-size: 1rem;
-      color: #fff;
-      background: #0f3460;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: transform 0.15s, background 0.15s;
-    }
-    button:hover { background: #16447a; transform: translateY(-2px); }
-    #result { margin-top: 20px; font-size: 1.1rem; min-height: 1.5em; color: #81c784; }
-    footer { margin-top: 40px; font-size: 0.85rem; opacity: 0.5; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caesar-s1mple · Personal Homepage</title>
+<style>
+  :root {
+    --bg: #0e1420;
+    --bg-soft: #151d2e;
+    --card: rgba(255,255,255,0.045);
+    --border: rgba(255,255,255,0.10);
+    --text: #e8ecf3;
+    --muted: #93a0b4;
+    --accent: #4fc3f7;
+    --accent2: #81c784;
+    --c-coding: #4fc3f7;
+    --c-cyber: #ef7891;
+    --c-agentic: #81c784;
+    --c-inhouse: #ffb74d;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.7;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+    background: rgba(14,20,32,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.3px; }
+  .brand span { color: var(--accent); }
+  .nav-links { display: flex; gap: 22px; font-size: 0.92rem; }
+  .nav-links a { color: var(--muted); }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  .nav-links a.active { color: var(--accent); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    text-align: center;
+    padding: 96px 24px 72px;
+    background:
+      radial-gradient(600px 300px at 20% 0%, rgba(79,195,247,0.12), transparent),
+      radial-gradient(600px 300px at 80% 10%, rgba(129,199,132,0.10), transparent);
+  }
+  .avatar {
+    width: 88px; height: 88px; margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 700; color: #0b1620;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+  }
+  .hero h1 { font-size: 2.4rem; letter-spacing: 0.5px; }
+  .hero p { color: var(--muted); margin-top: 10px; }
+
+  /* ---------- layout ---------- */
+  main { max-width: 980px; margin: 0 auto; padding: 24px 24px 80px; }
+  section { margin-top: 64px; }
+  .section-title {
+    font-size: 1.6rem; font-weight: 700;
+    padding-left: 14px; border-left: 4px solid var(--accent);
+    margin-bottom: 8px;
+  }
+  .section-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; padding-left: 18px; }
+
+  .empty-box {
+    border: 1px dashed var(--border); border-radius: 12px;
+    padding: 44px 24px; text-align: center; color: var(--muted);
+  }
+
+  /* ---------- research feature ---------- */
+  .feature-head h3 { font-size: 1.25rem; margin-bottom: 10px; }
+  .feature-head p { color: var(--muted); font-size: 0.95rem; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 26px; }
+  .chip {
+    font-size: 0.85rem; padding: 6px 14px; border-radius: 999px;
+    background: rgba(79,195,247,0.12); color: var(--accent);
+    border: 1px solid rgba(79,195,247,0.30);
+  }
+  .chip.gold { background: rgba(255,183,77,0.12); color: var(--c-inhouse); border-color: rgba(255,183,77,0.35); }
+  .chip.green { background: rgba(129,199,132,0.12); color: var(--accent2); border-color: rgba(129,199,132,0.35); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .filters button {
+    font-size: 0.85rem; padding: 6px 16px; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    transition: all .15s;
+  }
+  .filters button:hover { color: var(--text); border-color: var(--muted); }
+  .filters button.on { background: var(--accent); border-color: var(--accent); color: #0b1620; font-weight: 600; }
+
+  /* ---------- benchmark card ---------- */
+  .bcard {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 26px 28px; margin-bottom: 22px;
+  }
+  .bcard.coding   { border-top: 3px solid var(--c-coding); }
+  .bcard.cyber    { border-top: 3px solid var(--c-cyber); }
+  .bcard.agentic  { border-top: 3px solid var(--c-agentic); }
+  .bcard.inhouse  { border-top: 3px solid var(--c-inhouse); }
+
+  .bcard-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+  .bcard-top h4 { font-size: 1.18rem; }
+  .tag {
+    font-size: 0.72rem; padding: 2px 10px; border-radius: 999px; font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+  .tag.coding  { background: rgba(79,195,247,.14);  color: var(--c-coding); }
+  .tag.cyber   { background: rgba(239,120,145,.14); color: var(--c-cyber); }
+  .tag.agentic { background: rgba(129,199,132,.14); color: var(--c-agentic); }
+  .tag.inhouse { background: rgba(255,183,77,.14);  color: var(--c-inhouse); }
+  .glm-chip {
+    margin-left: auto; font-size: 0.8rem; padding: 4px 12px; border-radius: 8px;
+    background: linear-gradient(90deg, rgba(79,195,247,.18), rgba(129,199,132,.18));
+    border: 1px solid rgba(79,195,247,.35); color: var(--text); white-space: nowrap;
+  }
+  .links { margin: 4px 0 14px; font-size: 0.84rem; display: flex; flex-wrap: wrap; gap: 14px; }
+
+  .meta {
+    display: grid; grid-template-columns: 88px 1fr; gap: 2px 14px;
+    font-size: 0.9rem; margin-bottom: 14px;
+    background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px 16px;
+  }
+  .meta dt { color: var(--muted); }
+  .meta dd { margin: 0; }
+
+  .block { margin-bottom: 12px; font-size: 0.93rem; }
+  .block .bt {
+    display: inline-block; font-size: 0.78rem; font-weight: 700; color: var(--muted);
+    letter-spacing: 1px; margin-bottom: 4px;
+  }
+  .block p { color: #cfd7e2; }
+
+  .chart-wrap {
+    margin-top: 16px; background: rgba(0,0,0,0.22);
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+  }
+  .chart-title { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 0.82rem; }
+  .bar-label { width: 148px; text-align: right; color: var(--muted); flex-shrink: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.me { color: var(--accent); font-weight: 700; }
+  .bar-track { flex: 1; height: 18px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; background: rgba(255,255,255,0.22); min-width: 2px; }
+  .bar-fill.old { background: rgba(255,255,255,0.10); border: 1px dashed rgba(255,255,255,0.25); }
+  .bar-fill.me { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .bar-val { width: 52px; flex-shrink: 0; color: var(--muted); }
+  .bar-val.me { color: var(--text); font-weight: 700; }
+  .chart-note { font-size: 0.78rem; color: var(--muted); margin-top: 10px; opacity: 0.85; }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--border); padding: 28px 24px 40px;
+    text-align: center; color: var(--muted); font-size: 0.84rem;
+  }
+  footer .ok { color: var(--accent2); }
+
+  @media (max-width: 640px) {
+    nav { padding: 12px 18px; }
+    .nav-links { gap: 14px; }
+    .hero h1 { font-size: 1.8rem; }
+    .bar-label { width: 96px; font-size: 0.76rem; }
+    .meta { grid-template-columns: 76px 1fr; }
+    .bcard { padding: 20px 18px; }
+    .glm-chip { margin-left: 0; }
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>GitHub Pages 部署测试</h1>
-    <div class="equation">1 + 1 = 2</div>
-    <button onclick="verify()">点我用 JS 验算</button>
-    <div id="result"></div>
-  </div>
-  <footer>Caesar-s1mple.github.io — deployed via GitHub Pages</footer>
 
-  <script>
-    function verify() {
-      const a = 1, b = 1;
-      const sum = a + b;
-      document.getElementById('result').textContent =
-        sum === 2
-          ? `✓ JS 计算结果: ${a} + ${b} = ${sum}，数学还没有崩坏`
-          : `✗ 出大事了: ${a} + ${b} = ${sum}`;
-    }
-  </script>
+<nav>
+  <div class="brand">Caesar<span>-s1mple</span></div>
+  <div class="nav-links">
+    <a href="#home">首页</a>
+    <a href="#research" class="active">Research</a>
+    <a href="#projects">Projects</a>
+    <a href="#blog">Blog</a>
+  </div>
+</nav>
+
+<header class="hero" id="home">
+  <div class="avatar">C</div>
+  <h1>Caesar-s1mple</h1>
+  <p>个人主页 · Personal Homepage —— 持续建设中,目前 Research 章节已上线</p>
+</header>
+
+<main>
+  <!-- ================= Research ================= -->
+  <section id="research">
+    <h2 class="section-title">Research</h2>
+    <p class="section-sub">论文解读 · 技术调研 · Benchmark 笔记</p>
+
+    <div class="feature-head">
+      <h3>📊 GLM-5.3 报告基准(Benchmark)全景解读</h3>
+      <p>
+        2026 年 8 月,Z.ai 发布 <a href="https://z.ai/blog/glm-5.3" target="_blank" rel="noopener">GLM-5.3</a>
+        ——与 GLM-5.2 使用同一基座模型,全部提升来自后训练(post-training)规模扩展。
+        官方博客中共报告了 <strong>16 项基准</strong>(Coding 8 项、Cyber 3 项、Agentic 5 项),
+        外加 1 项官方内部基准 Z.ai Code Bench。本页面对这些基准逐一讲解:
+        谁提出的、什么时候提出、测什么、怎么测、当前排名如何。
+      </p>
+      <p style="font-size:0.84rem; opacity:0.85;">
+        ⚠️ 数据说明:各卡片中"博客成绩对比"图表的数据来自
+        <a href="https://z.ai/blog/glm-5.3" target="_blank" rel="noopener">Z.ai 官方博客</a>(2026-08,厂商自报口径,
+        不同模型的 agent 框架/预算可能不同);"排名情况"来自各基准官方榜单或公开资料(已注明日期与来源),
+        两者口径未必一致,引用时请以官方渠道为准。
+      </p>
+      <div class="chips">
+        <span class="chip">16 项公开基准 + 1 项内部基准</span>
+        <span class="chip gold">博客口径 3 项第一:CyberGym / AutomationBench / GDPval-AA</span>
+        <span class="chip green">16 项成绩全面超越 GLM-5.2</span>
+      </div>
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="on" data-cat="all">全部</button>
+      <button data-cat="coding">Coding 编程</button>
+      <button data-cat="cyber">Cyber 网络安全</button>
+      <button data-cat="agentic">Agentic 智能体</button>
+      <button data-cat="inhouse">官方内部</button>
+    </div>
+
+    <div id="cards"></div>
+  </section>
+
+  <!-- ================= Projects(占位) ================= -->
+  <section id="projects">
+    <h2 class="section-title">Projects</h2>
+    <p class="section-sub">个人项目与开源作品</p>
+    <div class="empty-box">🚧 暂无内容,敬请期待</div>
+  </section>
+
+  <!-- ================= Blog(占位) ================= -->
+  <section id="blog">
+    <h2 class="section-title">Blog</h2>
+    <p class="section-sub">随笔与日常记录</p>
+    <div class="empty-box">🚧 暂无内容,敬请期待</div>
+  </section>
+</main>
+
+<footer>
+  <p>© 2026 Caesar-s1mple · Deployed via GitHub Pages</p>
+  <p>本站内容整理自公开资料(检索日期 2026-08-14),如有出入以官方渠道为准</p>
+  <p class="ok">站点部署测试: 1 + 1 = 2 ✓</p>
+</footer>
+
+<script>
+/* ============================================================
+   GLM-5.3 博客基准数据
+   图表数据: Z.ai 官方博客 (2026-08) https://z.ai/blog/glm-5.3
+   背景资料: 各基准官网 / arXiv / GitHub(检索于 2026-08-14)
+   ============================================================ */
+const CAT_NAME = { coding: "Coding", cyber: "Cyber", agentic: "Agentic", inhouse: "官方内部" };
+
+const BENCH = [
+/* ---------------- Coding ---------------- */
+{
+  id: "terminal-bench", cat: "coding", name: "Terminal-Bench", sub: "2.1 & 3.0",
+  glm: "2.1: 88.2(第3/8)· 3.0: 28.3(第3/6)",
+  proposer: "斯坦福大学 + Laude Institute 联合发起的开源项目(核心作者 Mike A. Merrill、Alex Shaw、Nicholas Carlini 等;3.0 有 100+ 社区贡献者,赞助方含 Anthropic、OpenAI、Google)",
+  time: "初版 2025-05 上线;论文 arXiv:2601.11868(2026-01)对应 2.0;2.1 是修复环境缺陷的 verified 版;3.0(原名 Frontier-Bench)2026 年中发布",
+  what: "评测 AI agent 在真实终端(CLI)环境中端到端完成高技能计算机任务的能力——软件工程、系统管理、安全、数据处理、模型训练等。它填补的是「只评文本答案、不评实际操作结果」的空白;3.0 则因 2.x 趋于饱和(榜首 >83%)而造得更难、领域更广。",
+  how: "每个任务 = 独立 Docker 环境 + 自然语言指令 + pytest 式自动化测试 + 人工 oracle 解,二元 pass/fail,指标为通过率。2.1 共 89 个任务;3.0 首版 74 个任务、7 个领域,并将 agent 容器与 verifier 容器分离以防 reward hacking,通过 Harbor 框架统一运行。",
+  ranking: "官方 2.1 榜单(2026-08-14):Claude Code + Fable 5 以 83.8% 居首,Codex + GPT-5.5 83.1%。3.0 官方榜单尚在建中,发布公告给出 GPT-5.6 Sol 34.4%、Fable 5 33.8% 的首批成绩。注意:官方榜与 GLM 博客使用的 agent 框架不同,分数不可直接对表。",
+  links: [["官网", "https://www.tbench.ai"], ["论文", "https://arxiv.org/abs/2601.11868"], ["GitHub", "https://github.com/laude-institute/terminal-bench"]],
+  charts: [
+    { title: "Terminal-Bench 2.1 · 博客成绩对比(通过率 %)", data: [["GPT-5.6 Sol",88.8],["Kimi K3",88.3],["GLM-5.3",88.2,"me"],["Fable 5",88.0],["DeepSeek-V4 Pro",87.9],["Qwen3.8-Max",86.6],["Opus 4.8",85.0],["GLM-5.2",81.0,"old"]] },
+    { title: "Terminal-Bench 3.0 · 博客成绩对比(通过率 %)", data: [["GPT-5.6 Sol",34.6],["Fable 5",33.7],["GLM-5.3",28.3,"me"],["Opus 4.8",21.1],["Kimi K3",17.4],["GLM-5.2",4.6,"old"]] , note: "3.0 难度极大:GLM-5.2 仅 4.6%,GLM-5.3 提升至 28.3%(+515%),为开源权重模型最佳。" }
+  ]
+},
+{
+  id: "deepswe", cat: "coding", name: "DeepSWE", sub: "v1.1",
+  glm: "66.9(第4/8)",
+  proposer: "AI 数据初创公司 Datacurve(Charley Lee、Leonard Tng、Serena Ge)——名字虽像,但与 DeepSeek 无关",
+  time: "2026-05 发布;论文 arXiv:2607.07946(2026-07);v1.1 约 2026-07 将评分迁移到 Harbor 独立验证容器",
+  what: "评测前沿编程 agent 的「长程」软件工程能力。针对 SWE-bench 系列的两大缺陷而生:①任务挖自已合并的公开 PR,答案可能已进入预训练语料(污染);②沿用原 PR 附带测试评分,会误判正确的替代实现——论文称 SWE-bench Pro 评分与独立 LLM judge 的分歧率达 32.4%,而 DeepSWE 仅 1.4%。",
+  how: "113 个从零原创、从不上游合并的任务,覆盖 91 个活跃开源仓库、5 种语言(TS/Go/Python/JS/Rust),参考解法平均改动量约为 SWE-bench Pro 的 5.5 倍。所有模型统一在 mini-swe-agent(单 bash 工具)下运行,每任务约 4 次 rollout、上限 2.5 小时;v1.1 起提交 patch 后在干净隔离容器中由手写功能性 verifier 评分(含回归测试),报 pass@1(宏平均)与 95% 置信区间。",
+  ranking: "官方榜单(2026-08-13,24 个模型):Claude Opus 5 74%±4% 居首,GPT-5.6 Sol 73%±3%,Fable 5 70%,Kimi K3 69%。GLM-5.2 为 44%,GLM-5.3 尚未进入官方榜单(博客自报 66.9)。",
+  links: [["官网/榜单", "https://deepswe.datacurve.ai/"], ["论文", "https://arxiv.org/abs/2607.07946"], ["GitHub", "https://github.com/datacurve-ai/deep-swe"]],
+  charts: [
+    { title: "DeepSWE v1.1 · 博客成绩对比(pass@1 %)", data: [["GPT-5.6 Sol",72.7],["Fable 5",69.7],["Kimi K3",67.5],["GLM-5.3",66.9,"me"],["DeepSeek-V4 Pro",62.7],["Opus 4.8",58.0],["Qwen3.8-Max",56.6],["GLM-5.2",46.2,"old"]] }
+  ]
+},
+{
+  id: "nl2repo", cat: "coding", name: "NL2Repo", sub: "NL2Repo-Bench",
+  glm: "58.0(并列第2/6)",
+  proposer: "字节跳动 Seed 牵头,联合 M-A-P、2077AI、Humanlaya Data 及南京大学、北京大学、北邮、北航等,论文作者 40 余人",
+  time: "2025-12-14 arXiv 预印本 arXiv:2512.12730(v2: 2026-01)",
+  what: "评测 Coding Agent 的长程(long-horizon)仓库级代码生成:仅凭一份自然语言需求文档和空白工作区,从零构建一个完整可安装的 Python 库。此前基准多为函数级生成、仓库内补全或 issue 修复(如 SWE-bench),NL2Repo 填补「从零造整个仓库 + 可执行客观验证」的空白。",
+  how: "104 个任务,选自 GitHub 上自带完整 pytest 测试套件的真实 Python 库(300–120k 行代码,9 大类,分 easy/medium/hard);需求文档平均约 1.88 万 token。Agent(主要用 OpenHands,另测 Claude Code、Cursor-CLI)不限轮次自主开发,产出在独立 Docker 中跑原仓库官方 pytest,指标为平均测试通过率(%)与 Pass@1(完整通过的仓库数)。",
+  ranking: "论文结果(2025-12):Claude Sonnet 4.5(Claude Code)40.2% 居首,最强模型 Pass@1 也仅 5/104;无持续更新的官方榜单。GLM-5.3 博客自报 58.0,其表中 Opus 4.8 69.7 为最高。",
+  links: [["论文", "https://arxiv.org/abs/2512.12730"], ["GitHub", "https://github.com/multimodal-art-projection/NL2RepoBench"]],
+  charts: [
+    { title: "NL2Repo · 博客成绩对比(平均测试通过率 %)", data: [["Opus 4.8",69.7],["DeepSeek-V4 Pro",61.1],["GLM-5.3",58.0,"me"],["Kimi K3",58.0],["Qwen3.8-Max",55.9],["GLM-5.2",48.9,"old"]] }
+  ]
+},
+{
+  id: "programbench", cat: "coding", name: "ProgramBench", sub: "Almost Solved 口径",
+  glm: "19.0(第3/6)",
+  proposer: "John Yang、Kilian Lieret(SWE-bench / mini-SWE-agent 核心作者)等 12 人,来自 Meta、Stanford、Harvard",
+  time: "2026-05-05 发布,arXiv:2605.03546",
+  what: "评测 coding agent 从零整体构建软件的能力——现有基准(如 SWE-bench)只测「在已有代码库里修 bug / 加功能」,测不到架构设计与模块分解。ProgramBench 只给 agent 一个编译好的可执行文件 + 文档,要求「净室」重实现出行为等价的完整程序(禁止反编译,只能探测行为)。",
+  how: "200 个任务,取自开源仓库(从 jq、ripgrep 到 FFmpeg、SQLite、PHP 解释器);agent 在无网络沙箱中运行,用 mini-SWE-agent 统一支架(1000 步 / 6 小时上限)。评分基于 agent 模糊测试生成的 24.8 万+ 隐藏行为测试:主指标 % Resolved(全部通过),GLM 博客报告的「Almost Solved」是辅助指标 % Almost Resolved(≥95% 测试通过)。",
+  ranking: "论文初始结果(2026-05):9 个前沿模型 Resolved 全部为 0%,Almost Resolved 最高仅 3.0%。截至 2026-08,第三方 vals.ai 复测:Fable 5 达 33.0% 领先;已有 13 个任务被至少一个模型完全解决。",
+  links: [["官网", "https://programbench.com/"], ["论文", "https://arxiv.org/abs/2605.03546"], ["第三方复测", "https://www.vals.ai/benchmarks/programbench"]],
+  charts: [
+    { title: "ProgramBench · 博客成绩对比(Almost Solved %)", data: [["Fable 5",33.0],["GPT-5.6 Sol",23.0],["GLM-5.3",19.0,"me"],["Kimi K3",17.5],["Opus 4.8",15.5],["Qwen3.8-Max",10.5],["GLM-5.2",9.5,"old"]] }
+  ]
+},
+{
+  id: "frontierswe", cat: "coding", name: "FrontierSWE", sub: "",
+  glm: "78.1(第2/4)",
+  proposer: "AI 初创公司 Proximal(Evan Chu、Rajan Agarwal 共同 lead,Justus Mattern 等),与 Modular、Prime Intellect 及 MIT、Stanford、滑铁卢、剑桥的学术合作者共同构建",
+  time: "2026 年上半年(GitHub 仓库 2026-03 已存在),以博客 + GitHub 形式发布,无独立论文",
+  what: "评测编程 agent 完成超长时程(数小时到数十小时)开放式技术项目的能力。创立动机是现有基准太短——SWE-Bench Pro 任务解法平均仅 107 行代码、Terminal-Bench 多数任务只运行 1–20 分钟,已无法区分顶尖模型。",
+  how: "首版 17 个任务,分三类:Implementation(如用 Zig 写 PostgreSQL 服务器)、Performance Optimization(如编译器/Pyright 提速)、Research(ML 研究)。每任务给 agent 最多 20 小时、跑 5 次,0–1 连续打分(允许部分解;有隐藏测试与正确性门槛,作弊记 0 分)。与 harness 无关(Claude Code、Codex、Gemini CLI 均可),指标为 mean@5 / best@5 / dominance(对随机对手的任务级胜率)。",
+  ranking: "官方榜单(2026-08,已收录 GLM-5.3):Fable 5 dominance 88% 居首,GLM-5.3 78% 第二,Grok 4.6 78% 并列——与 GLM 博客报告一致,是少数博客与官方口径吻合的基准。",
+  links: [["官网", "https://frontierswe.com/"], ["发布博客", "https://www.proximal.ai/blog/frontierswe/"], ["GitHub", "https://github.com/Proximal-Labs/frontier-swe"]],
+  charts: [
+    { title: "FrontierSWE · 博客成绩对比(dominance %)", data: [["Fable 5",88.2],["GLM-5.3",78.1,"me"],["GLM-5.2",67.5,"old"],["Opus 4.8",66.5]] , note: "该基准仅收录少量前沿模型;Kimi K3、GPT-5.6 Sol 等在博客表中无成绩。" }
+  ]
+},
+{
+  id: "swe-marathon", cat: "coding", name: "SWE-Marathon", sub: "v1.1",
+  glm: "42.5(并列第3/5)",
+  proposer: "Abundant AI 团队主导(Rishi Desai、Jesse Hu 等),贡献者来自 Stanford、Harvard、Waterloo、Georgia Tech、Zenity、Near AI 等,属社区驱动项目",
+  time: "论文 2026-06-05 提交 arXiv:2606.07682;官网现行为 v1.1 版本",
+  what: "评测编码 agent 能否自主完成超长时程(多小时、数千万 token)的软件工程工作——论文报告平均单次尝试消耗 27.2M token(v1.1 官网称均值 87M token/次),并发现 13.8% 的 rollout 存在 reward hacking。短任务基准(单 PR、几分钟)无法衡量长程规划、记忆与自我验证能力,SWE-Marathon 填补这一空白。",
+  how: "20 个任务分四类:库/工具复现(如用 Rust 写 C 编译器、重实现 Kubernetes)、产品克隆(如克隆 Slack / Stripe / S3)、ML 工程、算法优化。每任务有独立可执行环境 + 人工参考解 + 多层验证(可见/隐藏测试、审计脚本、CUA 浏览器操作 UI 评分、性能门槛、网络出口限制)。二元评分:全部验证通过得 1.0 否则 0;每任务跑 k=8 次报 pass@1。",
+  ranking: "官网 v1.1 榜单(2026-08-14,累计 5,440 次试验):Claude Opus 5 50.0% > Opus 4.8 48.8% > Kimi K3 48.1% > Fable 5 45.0% > GPT-5.6 Sol 42.5%;GLM-5.2 为 19.4%,GLM-5.3 尚未上榜(博客自报 42.5)。",
+  links: [["官网", "https://www.swe-marathon.org/"], ["论文", "https://arxiv.org/abs/2606.07682"], ["GitHub", "https://github.com/abundant-ai/swe-marathon"]],
+  charts: [
+    { title: "SWE-Marathon v1.1 · 博客成绩对比(pass@1 %)", data: [["Opus 4.8",48.8],["Kimi K3",48.1],["GLM-5.3",42.5,"me"],["GPT-5.6 Sol",42.5],["Fable 5",33.1],["GLM-5.2",19.4,"old"]] }
+  ]
+},
+{
+  id: "posttrainbench", cat: "coding", name: "PostTrainBench", sub: "",
+  glm: "39.8(第2/5)",
+  proposer: "德国 ELLIS Institute Tübingen、马克斯·普朗克智能系统研究所、Tübingen AI Center 及 Thoughtful Lab(Ben Rank、Hardik Bhatnagar、Ameya Prabhu、Matthias Bethge、Maksym Andriushchenko 等);ICML 2026 接收",
+  time: "2026-03-09 上传 arXiv:2603.08640",
+  what: "评测 LLM 驱动的 CLI agent 能否自主完成大模型后训练(post-training)全过程:选数据、写训练代码、SFT/RL、调参、评估迭代。此前 agent 评测集中在软件工程,PostTrainBench 把评测推进到「AI 自动化 AI 研发」本身。",
+  how: "给 agent 一个 base 模型(Qwen3-1.7B/4B、SmolLM3-3B、Gemma-3-4B 四选一)+ 一个目标 benchmark,单张 H100、10 小时、终端 + 联网,无任何起始代码。最终用训练出的模型在目标 benchmark 上跑分(4 模型 × 7 benchmark 加权平均)。LLM judge 审计作弊(测试集污染、盗用 API 蒸馏、偷换 instruct 模型),违规按 base 模型分计。",
+  ranking: "官网 v1.1 榜单(2026-08):官方 instruct 模型参考线 51.14%;Fable 5(Claude Code)41.79% 居首,其后 GPT-5.6 36.23%、Opus 5 35.04%、Kimi K3 31.96%、GLM-5.2 31.70%;base 模型零样本仅 7.53%。GLM-5.3 博客自报 39.8,逼近榜首。",
+  links: [["官网/榜单", "https://posttrainbench.com/"], ["论文", "https://arxiv.org/abs/2603.08640"], ["GitHub", "https://github.com/aisa-group/PostTrainBench"]],
+  charts: [
+    { title: "PostTrainBench · 博客成绩对比(加权分 %)", data: [["Fable 5",41.8],["GLM-5.3",39.8,"me"],["GPT-5.6 Sol",36.2],["Opus 4.8",32.9],["Kimi K3",32.0],["GLM-5.2",31.7,"old"]] }
+  ]
+},
+/* ---------------- Cyber ---------------- */
+{
+  id: "cybergym", cat: "cyber", name: "CyberGym", sub: "",
+  glm: "84.5(第1/8)",
+  proposer: "UC Berkeley Sunblaze Lab(Dawn Song 宋晓冬团队;Zhun Wang、Tianneng Shi、Jingxuan He 等);ICLR 2026 接收",
+  time: "2025-06-03 arXiv:2506.02548(v3 更新于 2026-03);2026-06 同团队推出扩展版 CyberGym-E2E(覆盖发现→PoC→补丁全流程)",
+  what: "评测 AI agent 的真实世界漏洞分析与复现能力。此前安全基准(如 NYU CTF、Cybench)规模小、多为 CTF 玩具题,无法衡量真实软件安全能力。论文还展示了实战价值——基于该基准的工作流发现了 34 个 zero-day 和 18 个历史不完整补丁。",
+  how: "1,507 个真实漏洞任务,来自 Google OSS-Fuzz 监控的 188 个 C/C++ 开源项目,以内存安全漏洞为主。Agent 在 Docker 中拿到漏洞文本描述 + 未打补丁代码库,迭代生成 PoC 输入;判定严格:PoC 必须在 pre-patch 版本触发崩溃、在 post-patch 版本正常通过(双重执行验证)。按给定信息丰富度分 Level 0–3,主榜用 Level 1,指标为成功率。",
+  ranking: "无统一官方榜单,多为厂商在不同 scaffold 下自报,可比性有限:Claude Mythos Preview 83.1%(Anthropic 内测)、GPT-5.5 81.8%、腾讯玄武实验室 Atuin 系统自报 84.0%(2026-07,未独立验证)。GLM-5.3 博客自报 84.5,为其对比表中最高,官方称达 SOTA。",
+  links: [["论文", "https://arxiv.org/abs/2506.02548"], ["GitHub", "https://github.com/sunblaze-ucb/cybergym"], ["官网", "https://cybergym.io"]],
+  charts: [
+    { title: "CyberGym · 博客成绩对比(成功率 %)", data: [["GLM-5.3",84.5,"me"],["Fable 5",83.8],["GPT-5.6 Sol",83.6],["DeepSeek-V4 Pro",83.3],["Kimi K3",80.0],["Qwen3.8-Max",78.5],["Opus 4.8",78.1],["GLM-5.2",77.2,"old"]] }
+  ]
+},
+{
+  id: "exploitgym", cat: "cyber", name: "ExploitGym", sub: "2h / 6h 双预算",
+  glm: "105 / 130(第3/6)",
+  proposer: "UC Berkeley(RDI 中心)牵头,联合马普所 MPI-SP、UC Santa Barbara、Arizona State(Zhun Wang、Nico Schiller、Thorsten Holz、Dawn Song 等),Anthropic、OpenAI、Google 研究员参与——CyberGym 团队的后续工作",
+  time: "2026-05-11 arXiv:2605.11086",
+  what: "评测 AI agent 把「已知漏洞」变成「真实攻击」的能力(exploitation):从能触发崩溃的 PoV 输入出发,构造实现未授权代码执行的完整 exploit。此前基准多测「找漏洞」或 CTF,很少测真实软件上的漏洞武器化;该能力为双用(dual-use),亟需严谨度量。",
+  how: "v1.0 共 869 个任务,来自真实 CVE,分三域:用户态程序 502(OSS-Fuzz/OSV)、V8 引擎 181、Linux 内核 186。每题提供漏洞源码 + PoV + 容器化环境,agent 须写出 exploit 读取 secret flag;用 agent-as-a-judge 验证是否确实走的目标漏洞;可开关 ASLR、canary、V8 沙箱等防护。GLM 博客报告的是 2 小时 / 6 小时两种时间预算下的成功 exploit 数。",
+  ranking: "官方榜单在 cybergym.io/exploitgym(动态渲染)。第三方汇总(2026-08):GPT-5.6 Sol 领先。GLM 博客口径(6h):GPT-5.6 Sol 293 > Fable 5 247 > GLM-5.3 130;官方博客强调 GLM-5.3 较 5.2(39)提升超 3 倍,且「越往利用链上游,提升越大」。",
+  links: [["论文", "https://arxiv.org/abs/2605.11086"], ["官网/榜单", "https://www.cybergym.io/exploitgym/"], ["GitHub", "https://github.com/sunblaze-ucb/exploitgym"]],
+  charts: [
+    { title: "ExploitGym · 博客成绩对比(6h 预算成功 exploit 数)", data: [["GPT-5.6 Sol",293],["Fable 5",247],["GLM-5.3",130,"me"],["Opus 4.8",120],["Kimi K3",70],["GLM-5.2",39,"old"]], note: "2h 预算口径:GPT-5.6 Sol 216 / Fable 5 181 / GLM-5.3 105 / Opus 4.8 80 / Kimi K3 36 / GLM-5.2 29。" }
+  ]
+},
+{
+  id: "exploitbench", cat: "cyber", name: "ExploitBench", sub: "",
+  glm: "54.4(第3/6)",
+  proposer: "Seunghyun Lee 与 David Brumley(CMU 教授、Bugcrowd 首席 AI 官),来自卡内基梅隆大学与 Bugcrowd",
+  time: "2026-05-13 arXiv:2605.14153",
+  what: "评测 LLM agent 针对已加固的 V8 引擎真实 N-day 漏洞能走多远。既有安全基准把「触发崩溃」当成功,无法区分「崩溃」与「完整 exploit」;ExploitBench 衡量从复现到任意代码执行(ACE)的完整利用链,且全程启用 V8 沙箱等真实防御。",
+  how: "41 个 V8 漏洞(均为 2024 年后报告、对应 v8CTF 万美元赏金级),容器化环境含源码、补丁、预编译 d8 与调试工具。把利用过程分解为 16 个能力 flag、5 个层级(覆盖率→触发崩溃→沙箱内原语→越沙箱读写/信息泄露→控制流劫持/ACE),全部由确定性 oracle 自动判定(challenge-response、差分执行、信号处理器),不用 LLM 裁判。Agent 通过 MCP 的 6 个工具交互,300 轮预算。",
+  ranking: "无持续更新的公开榜单。论文(2026-05):仅 Anthropic 未公开的 Mythos Preview 在 18/41 个 bug 上达成 ACE,GPT-5.5 仅 1 例,其余公开模型(Opus 4.7、GLM 5.1、Kimi K2.6 等)均未达成 ACE。GLM-5.3 博客自报 54.4,次于 Fable 5 78.0 与 GPT-5.6 Sol 76.5。",
+  links: [["论文", "https://arxiv.org/abs/2605.14153"]],
+  charts: [
+    { title: "ExploitBench · 博客成绩对比(能力 flag 得分)", data: [["Fable 5",78.0],["GPT-5.6 Sol",76.5],["GLM-5.3",54.4,"me"],["Opus 4.8",40.0],["Kimi K3",32.2],["Qwen3.8-Max",28.8],["GLM-5.2",24.4,"old"]] }
+  ]
+},
+/* ---------------- Agentic ---------------- */
+{
+  id: "toolathlon", cat: "agentic", name: "Toolathlon", sub: "Verified 版",
+  glm: "73.0(第6/8)",
+  proposer: "香港科技大学 NLP 组(Junlong Li 领衔、Junxian He 资深作者)联合 CMU、All Hands AI、Duke 等 21 位研究者;ICLR 2026 poster;Verified 版由同一团队维护",
+  time: "原版 2025-10 arXiv:2510.25726;Toolathlon-Verified 于 2026-06-30 发布,是当前官方计分版本(与旧版分数不可比)",
+  what: "评测语言 agent 在真实软件应用上执行多样、长流程工具调用任务的能力。动机:既有工具使用基准领域窄、任务简化、缺真实环境;Verified 版进一步修复了评测系统本身的失效问题——原版的题面歧义、评测器 bug、状态泄漏、外部服务抖动等测量噪声(83/108 任务被修订)。",
+  how: "108 个任务,覆盖 32 个真实应用(Google Calendar、Notion、WooCommerce、Kubernetes、BigQuery 等)共 604 个 MCP 工具,平均每任务约 20 轮交互。每任务配专用执行式验证脚本——无 LLM 评委、无部分分;指标为 Pass@1(3 次运行均值)、Pass@3、Pass³(3 次全过)与平均轮数;容器化运行、评分隔离、轨迹公开可审计。",
+  ranking: "官方榜单(数据截至 2026-08-05):Kimi K3 76.5 居首,Opus 4.8 76.2,Muse Spark 1.2 75.9,GPT-5.5 73.5;GLM-5.2 为 59.9。GLM-5.3 博客自报 73.0,与官方前列仍有差距。",
+  links: [["官网/榜单", "https://toolathlon.xyz"], ["论文", "https://arxiv.org/abs/2510.25726"], ["GitHub", "https://github.com/hkust-nlp/Toolathlon"]],
+  charts: [
+    { title: "Toolathlon Verified · 博客成绩对比(Pass@1 %)", data: [["Kimi K3",76.5],["Opus 4.8",76.2],["GPT-5.6 Sol",74.9],["Fable 5",74.7],["DeepSeek-V4 Pro",74.1],["GLM-5.3",73.0,"me"],["Qwen3.8-Max",72.5],["GLM-5.2",59.9,"old"]] }
+  ]
+},
+{
+  id: "automationbench", cat: "agentic", name: "AutomationBench", sub: "v1.0.6",
+  glm: "48.2(第1/8)",
+  proposer: "工作流自动化平台 Zapier 的内部团队研发(白皮书提交人 Daniel Shepard),最初用于内部模型选型,后对外公开",
+  time: "2026-04-20 官方博客发布;论文 arXiv:2604.18934(2026-04-21)",
+  what: "评测 AI agent 端到端完成真实业务工作流的能力——跨 CRM、邮箱、日历、IM 等多应用协同,需自主发现 API 并遵守业务规则。论文发布时最强模型得分不足 10%,难度极高。",
+  how: "6 大业务域(销售/市场/运营/客服/财务/HR),公开集 600 任务(另有 200 个 simple 基线不计分),47 个模拟 SaaS 应用、约 500 个 API 端点;agent 只有 search(BM25 搜 schema)+ execute(类 curl)两个工具,最多 50 步。评分为确定性终态断言:全部断言(含「不许发错邮件」等负向断言)通过才算成功;官方榜单在私有 held-out 集上运行以防污染。",
+  ranking: "GitHub 公开 600 题集(2026-07/08):Claude Opus 5 50.3% > Kimi K3 46.67% > Fable 5 46.17% > GPT-5.6 Sol 45.83%;GLM-5.2 为 26.17%。GLM-5.3 博客自报 48.2,为其对比表中第一。另有 Artificial Analysis 的独立变体 AutomationBench-AA(657 题,含护栏违规扣分)。",
+  links: [["官网/榜单", "https://zapier.com/benchmarks"], ["发布博客", "https://zapier.com/blog/introducing-automationbench/"], ["论文", "https://arxiv.org/abs/2604.18934"], ["GitHub", "https://github.com/zapier/AutomationBench"]],
+  charts: [
+    { title: "AutomationBench · 博客成绩对比(严格通过率 %)", data: [["GLM-5.3",48.2,"me"],["Kimi K3",46.7],["Fable 5",46.2],["GPT-5.6 Sol",45.8],["DeepSeek-V4 Pro",43.2],["Opus 4.8",41.0],["Qwen3.8-Max",39.8],["GLM-5.2",26.2,"old"]] }
+  ]
+},
+{
+  id: "ale", cat: "agentic", name: "Agents' Last Exam", sub: "ALE-CLI",
+  glm: "28.5(第2/8)",
+  proposer: "UC Berkeley RDI(负责任去中心化智能研究中心)与 RDI Foundation 主导,Dawn Song 团队(核心作者 Yiyou Sun 等),联合 250–300+ 行业专家",
+  time: "2026-06-03 arXiv:2606.05405(v2: 2026-06-11)",
+  what: "评测 AI agent 能否完成真实、长周期、有经济价值、结果可验证的专业工作流,弥补「刷榜强 ≠ 能干活」的评测空白。按美国 O*NET 职业分类覆盖 13 大行业、55 个子领域,任务源自专家真实完成的项目;目标 5000 题,已收集 1490+(公开 150,其余私有防污染)。",
+  how: "Agent(如 Claude Code、Codex)在真实 Windows/Linux 云沙箱中只拿到任务描述,自主完成后由隐藏参考答案 + 确定性评分器对产出物打分(0–1 分,报完全通过率与平均分)。每题限时 5 小时,分 Near-Term / Full-Spectrum / Last-Exam 三档难度。GLM 博客报告的 ALE-CLI 是 Linux-only 子集(105 题),对标 Terminal-Bench 但难得多。",
+  ranking: "论文数据(2026-06):总榜第一 Codex+GPT-5.5,Overall Pass 仅 24.0%,最难的 Last-Exam 档全部模型 0%;ALE-CLI 子榜 GPT-5.5 23.3% 领先。GLM-5.3 博客自报 ALE-CLI 28.5,与 GPT-5.6 Sol 28.6 几乎并列,官方称其为开源 SOTA。",
+  links: [["官网", "https://agents-last-exam.org"], ["论文", "https://arxiv.org/abs/2606.05405"], ["GitHub", "https://github.com/MaxIntelligenceAgency/ALE-Benchmark"]],
+  charts: [
+    { title: "ALE-CLI · 博客成绩对比(通过率 %)", data: [["GPT-5.6 Sol",28.6],["GLM-5.3",28.5,"me"],["Kimi K3",27.6],["Qwen3.8-Max",27.0],["DeepSeek-V4 Pro",25.7],["Opus 4.8",25.7],["GLM-5.2",23.8,"old"],["Fable 5",23.8]] }
+  ]
+},
+{
+  id: "hle", cat: "agentic", name: "Humanity's Last Exam", sub: "w/ Tools",
+  glm: "62.5(第3/8)",
+  proposer: "Center for AI Safety(CAIS,Dan Hendrycks)与 Scale AI(Alexandr Wang)联合提出;一作 Long Phan;全球 50+ 国家、500+ 机构近 1000 名专家供题;2026-01 正式发表于 Nature",
+  time: "2025-01-23 arXiv:2501.14249;Nature 版 2026-01-28(DOI: 10.1038/s41586-025-09962-4)",
+  what: "解决「基准饱和」问题——MMLU 等老牌基准上顶尖模型已超 90%,失去区分度。HLE 用 2500 道专家级、封闭式答案的题目(覆盖数学、自然科学、人文等 100+ 学科),测量模型是否达到人类知识前沿,同时测量校准误差(自信 vs 正确率)以揭示幻觉。",
+  how: "2500 题(24% 选择题、14% 多模态需读图),闭式答案自动评分,指标为准确率 + RMS 校准误差;另有等量私有题防污染。注意:「w/ Tools」并非 CAIS 官方变体,而是厂商自报的带工具配置(模型可调用搜索/代码等工具作答),各家工具栈不同。",
+  ranking: "官方榜单(agi.safe.ai / scale.com,无工具口径)按置信区间排名;带工具分数无统一官方榜单,横向比较需谨慎。第三方快照(2026-08)显示带工具榜首约 64%。GLM 博客口径:GPT-5.6 Sol 64.5 > Fable 5 63.9 > GLM-5.3 62.5。",
+  links: [["官网/榜单", "https://agi.safe.ai/"], ["论文", "https://arxiv.org/abs/2501.14249"], ["GitHub", "https://github.com/centerforaisafety/hle"]],
+  charts: [
+    { title: "HLE w/ Tools · 博客成绩对比(准确率 %)", data: [["GPT-5.6 Sol",64.5],["Fable 5",63.9],["GLM-5.3",62.5,"me"],["DeepSeek-V4 Pro",60.0],["Kimi K3",59.8],["Opus 4.8",57.9],["Qwen3.8-Max",56.2],["GLM-5.2",54.7,"old"]] }
+  ]
+},
+{
+  id: "gdpval", cat: "agentic", name: "GDPval-AA", sub: "v2",
+  glm: "1769(第1/8)",
+  proposer: "数据集 GDPval 由 OpenAI 于 2025 年发布(Patwardhan 等);「AA」即第三方评测机构 Artificial Analysis,GDPval-AA 是其基于 GDPval 自建的评测框架,v2 随 Intelligence Index v4.1 发布",
+  time: "GDPval 论文 arXiv:2510.04374(2025-10);GDPval-AA v2 于 2026-06-15 发布",
+  what: "评测模型完成有经济价值的真实职业任务的能力——GDPval 覆盖美国 GDP 占比最高的 9 大行业、44 种职业,产出为文档、表格、PPT、图表等成品交付物。传统考试型基准饱和后,这是「模型干活能力」的代表性度量;AA 版还把 OpenAI 原版依赖人工专家的评分自动化,实现可持续第三方评测。",
+  how: "使用 GDPval 公开的 220 个 gold 任务,模型在 AA 开源的 Stirrup agent 框架中运行(E2B 沙箱,可执行代码、shell、联网搜索),v2 每任务上限 250 轮。评分采用 3 个前沿模型组成裁判团的盲测两两对比,聚合为 Elo 分;v2 将人类专家交付物锚定为 1000 分。它是 AA 智能指数中权重最高(20%)的单项评测。",
+  ranking: "AA 官方榜单(2026-08 实时,200+ 条目):Claude Opus 5 1849 居首,Grok 4.6 1746,Fable 5 1741,Qwen3.8 Max 1737;GLM-5.2 为 1506(第 26)。GLM-5.3 博客自报 1769,为其对比表中第一。注意 AA 有新旧两套不可互比的 Elo 标尺,引用须注明版本与日期。",
+  links: [["AA 官方榜单", "https://artificialanalysis.ai/evaluations/gdpval-aa"], ["GDPval 论文", "https://arxiv.org/abs/2510.04374"], ["OpenAI 博客", "https://openai.com/index/gdpval/"]],
+  charts: [
+    { title: "GDPval-AA v2 · 博客成绩对比(Elo 分,人类专家 = 1000)", data: [["GLM-5.3",1769,"me"],["Fable 5",1743],["Qwen3.8-Max",1739],["GPT-5.6 Sol",1730],["Kimi K3",1682],["DeepSeek-V4 Pro",1590],["Opus 4.8",1588],["GLM-5.2",1508,"old"]], note: "Elo 为相对分,头部模型分数天然接近;条形按绝对值绘制。" }
+  ]
+},
+/* ---------------- 官方内部 ---------------- */
+{
+  id: "zai-code-bench", cat: "inhouse", name: "Z.ai Code Bench", sub: "官方内部基准",
+  glm: "较 GLM-5.2 提升约 50%",
+  proposer: "Z.ai GLM 团队自研的 in-house 基准,未署名具体作者,无独立论文、无公开仓库",
+  time: "随 GLM-5.3 发布博客(2026-08)首次对外介绍",
+  what: "在真实用户场景下评测编程 agent,而非孤立的算法题。设立动机:公开基准分数与真实体验脱节、公共测试集存在数据污染风险;私有基准能更忠实地衡量真实用户体验(官方博客原话)。",
+  how: "覆盖多样任务类别,将 agent 置于复杂的本地开发环境中;在不同 effort(推理投入)等级下,沿两个维度评测:端到端任务完成率 + 细粒度 checklist(检查项)准确率。任务总数与题目细节均未公开。",
+  ranking: "无公开 leaderboard(官方明确定位为 private benchmark)。已公布的相对数据:GLM-5.3 较 GLM-5.2 提升约 50%;另据第三方报道,同一模型下 Z.ai 自家 ZCode harness 比 Claude Code 任务整体通过率高 2.39%。绝对分数未公开。",
+  links: [["GLM-5.3 博客", "https://z.ai/blog/glm-5.3"]],
+  charts: []
+}
+];
+
+/* ---------------- 渲染 ---------------- */
+function chartHTML(c) {
+  const max = Math.max(...c.data.map(d => d[1]));
+  const rows = c.data.map(([label, val, cls]) => {
+    const w = Math.max(val / max * 100, 1).toFixed(1);
+    const me = cls === "me", old = cls === "old";
+    return `<div class="bar-row">
+      <div class="bar-label${me ? " me" : ""}">${label}</div>
+      <div class="bar-track"><div class="bar-fill${me ? " me" : old ? " old" : ""}" style="width:${w}%"></div></div>
+      <div class="bar-val${me ? " me" : ""}">${val}</div>
+    </div>`;
+  }).join("");
+  return `<div class="chart-wrap">
+    <div class="chart-title">${c.title}</div>
+    ${rows}
+    ${c.note ? `<div class="chart-note">${c.note}</div>` : ""}
+  </div>`;
+}
+
+function cardHTML(b) {
+  const links = b.links.map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener">🔗 ${t}</a>`).join("");
+  return `<article class="bcard ${b.cat}" data-cat="${b.cat}" id="${b.id}">
+    <div class="bcard-top">
+      <h4>${b.name}</h4>
+      ${b.sub ? `<span style="color:var(--muted);font-size:0.88rem">${b.sub}</span>` : ""}
+      <span class="tag ${b.cat}">${CAT_NAME[b.cat]}</span>
+      <span class="glm-chip">GLM-5.3:${b.glm}</span>
+    </div>
+    <div class="links">${links}</div>
+    <dl class="meta">
+      <dt>提出者</dt><dd>${b.proposer}</dd>
+      <dt>提出时间</dt><dd>${b.time}</dd>
+    </dl>
+    <div class="block"><span class="bt">干什么</span><p>${b.what}</p></div>
+    <div class="block"><span class="bt">怎么测</span><p>${b.how}</p></div>
+    <div class="block"><span class="bt">当前排名情况</span><p>${b.ranking}</p></div>
+    ${b.charts.map(chartHTML).join("")}
+  </article>`;
+}
+
+document.getElementById("cards").innerHTML = BENCH.map(cardHTML).join("");
+
+/* 分类筛选 */
+document.getElementById("filters").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  document.querySelectorAll("#filters button").forEach(b => b.classList.toggle("on", b === btn));
+  const cat = btn.dataset.cat;
+  document.querySelectorAll(".bcard").forEach(c => {
+    c.style.display = (cat === "all" || c.dataset.cat === cat) ? "" : "none";
+  });
+});
+</script>
 </body>
 </html>
