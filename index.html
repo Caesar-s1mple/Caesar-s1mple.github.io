@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caesar-s1mple 的测试页</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #eee;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 48px 64px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    h1 { font-size: 1.4rem; font-weight: 500; opacity: 0.8; margin-bottom: 24px; }
+    .equation {
+      font-size: 4rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #4fc3f7, #81c784);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    button {
+      margin-top: 32px;
+      padding: 12px 32px;
+      font-size: 1rem;
+      color: #fff;
+      background: #0f3460;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.15s;
+    }
+    button:hover { background: #16447a; transform: translateY(-2px); }
+    #result { margin-top: 20px; font-size: 1.1rem; min-height: 1.5em; color: #81c784; }
+    footer { margin-top: 40px; font-size: 0.85rem; opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>GitHub Pages 部署测试</h1>
+    <div class="equation">1 + 1 = 2</div>
+    <button onclick="verify()">点我用 JS 验算</button>
+    <div id="result"></div>
+  </div>
+  <footer>Caesar-s1mple.github.io — deployed via GitHub Pages</footer>
+
+  <script>
+    function verify() {
+      const a = 1, b = 1;
+      const sum = a + b;
+      document.getElementById('result').textContent =
+        sum === 2
+          ? `✓ JS 计算结果: ${a} + ${b} = ${sum}，数学还没有崩坏`
+          : `✗ 出大事了: ${a} + ${b} = ${sum}`;
+    }
+  </script>
+</body>
+</html>
