@@ -1,0 +1,89 @@
+/* ============================================================
+   Caesar-s1mple · 个人主页设计系统
+   暖纸底色 / 衬线标题 / 学术报告质感
+   ============================================================ */
+:root {
+  --paper: #faf9f6;
+  --surface: #ffffff;
+  --ink: #1c2333;
+  --muted: #626b7a;
+  --faint: #98a1ae;
+  --line: #e9e6df;
+  --accent: #3b4fd8;
+  --accent-soft: rgba(59, 79, 216, 0.08);
+  --teal: #0d9488;
+  --gold: #b45309;
+  --c-coding: #2563eb;
+  --c-cyber: #dc2626;
+  --c-agentic: #059669;
+  --c-inhouse: #d97706;
+  --serif: "Fraunces", Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+::selection { background: rgba(59,79,216,.15); }
+
+/* ---------- 顶部导航 ---------- */
+.nav {
+  position: sticky; top: 0; z-index: 60;
+  background: rgba(250, 249, 246, 0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-inner {
+  max-width: 1080px; margin: 0 auto; padding: 0 28px;
+  height: 58px; display: flex; align-items: center; justify-content: space-between;
+}
+.wordmark {
+  font-family: var(--serif); font-weight: 600; font-size: 1.12rem;
+  color: var(--ink); letter-spacing: 0.2px;
+}
+.wordmark:hover { text-decoration: none; opacity: 0.75; }
+.wordmark em { color: var(--accent); font-style: normal; }
+.nav-links { display: flex; gap: 26px; font-size: 0.9rem; }
+.nav-links a { color: var(--muted); position: relative; }
+.nav-links a:hover { color: var(--ink); text-decoration: none; }
+.nav-links a.here { color: var(--ink); font-weight: 600; }
+.nav-links a.here::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -19px;
+  height: 2px; background: var(--accent);
+}
+
+/* ---------- 通用布局 ---------- */
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+.kicker {
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--accent);
+}
+.section-title {
+  font-family: var(--serif); font-size: 1.9rem; font-weight: 600;
+  margin: 10px 0 6px;
+}
+.section-desc { color: var(--muted); font-size: 0.95rem; margin-bottom: 34px; }
+
+/* ---------- 页脚 ---------- */
+.footer {
+  border-top: 1px solid var(--line); margin-top: 96px;
+  padding: 36px 28px 48px; text-align: center;
+  color: var(--faint); font-size: 0.84rem;
+}
+.footer a { color: var(--muted); }
+.footer .egg { margin-top: 6px; color: var(--teal); font-size: 0.8rem; }
+
+@media (max-width: 640px) {
+  .nav-inner { padding: 0 18px; }
+  .nav-links { gap: 16px; font-size: 0.85rem; }
+  .wrap { padding: 0 18px; }
+}
