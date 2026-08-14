@@ -133,6 +133,10 @@
           GitHub
         </a>
         <a class="btn" href="#research">查看 Research ↓</a>
+        <button class="btn" id="wx-btn" type="button" title="点击复制微信号" style="cursor:pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#07C160"><path d="M8.7 4C4.9 4 2 6.6 2 9.9c0 1.8 1 3.4 2.5 4.5l-.6 1.9c-.1.3.2.5.4.4l2.2-1.1c.7.2 1.4.3 2.2.3h.4c-.2-.5-.3-1.1-.3-1.7 0-3.1 3-5.5 6.6-5.5h.4C15.3 6 12.3 4 8.7 4zm-2.2 3.4c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zm4.4 0c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9zM15.6 10c-3.3 0-6 2.1-6 4.7s2.7 4.7 6 4.7c.6 0 1.3-.1 1.9-.3l1.9 1c.2.1.5-.1.4-.3l-.5-1.6c1.5-.9 2.5-2.3 2.5-3.8 0-2.7-2.9-4.7-6.2-4.7zm-2.4 2.6c.4 0 .8.3.8.8s-.4.8-.8.8-.8-.3-.8-.8.4-.8.8-.8zm4.8 0c.4 0 .8.3.8.8s-.4.8-.8.8-.8-.3-.8-.8.4-.8.8-.8z"/></svg>
+          <span id="wx-text">微信 Caesar_DC</span>
+        </button>
       </div>
     </div>
     <div class="portrait"><img src="https://github.com/Caesar-s1mple.png?size=336" alt="Caesar-s1mple avatar" loading="lazy"></div>
@@ -189,8 +193,21 @@
 
 </main>
 
+<script>
+document.getElementById("wx-btn").addEventListener("click", async () => {
+  const t = document.getElementById("wx-text");
+  try {
+    await navigator.clipboard.writeText("Caesar_DC");
+    t.textContent = "已复制 ✓";
+  } catch {
+    t.textContent = "Caesar_DC";
+  }
+  setTimeout(() => { t.textContent = "微信 Caesar_DC"; }, 1600);
+});
+</script>
+
 <footer class="footer">
-  <p>© 2026 Caesar-s1mple · <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">Site source</a> · Deployed via GitHub Pages</p>
+  <p>© 2026 Caesar-s1mple · <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">Site source</a> · 联系:微信 Caesar_DC · Deployed via GitHub Pages</p>
   <p class="egg">站点自检:1 + 1 = 2 ✓ 一切正常</p>
 </footer>
 
