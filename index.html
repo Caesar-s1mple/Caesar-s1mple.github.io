@@ -20,6 +20,10 @@
     line-height: 1.12; letter-spacing: -0.5px; margin: 14px 0 18px;
   }
   .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero h1 .realname {
+    font-family: var(--sans); font-weight: 500; font-size: 0.3em;
+    color: var(--muted); letter-spacing: 0;
+  }
   .hero .bio { color: var(--muted); font-size: 1.05rem; max-width: 520px; }
   .hero-links { display: flex; gap: 20px; margin-top: 26px; align-items: center; }
   .hero-links a, .hero-links button {
@@ -130,9 +134,9 @@
   <div class="wrap hero-grid">
     <div>
       <div class="kicker">Hi, I'm</div>
-      <h1>Caesar</h1>
+      <h1>Caesar <span class="realname">(officially Zichao Lin)</span></h1>
       <p class="bio">
-        Officially Zichao Lin, currently working at Moonshot AI.<br>
+        Currently working at Moonshot AI.<br>
         Research interest in MLLM & Agents
       </p>
       <div class="hero-links">
