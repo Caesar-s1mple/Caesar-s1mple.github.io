@@ -114,6 +114,39 @@
     .entry { grid-template-columns: 1fr; }
     .entry-cover { min-height: 180px; }
   }
+
+  /* ---------- 小玩意儿 ---------- */
+  .hero .bio { min-height: 3.4em; }
+  .caret {
+    display: inline-block; width: 2px; height: 1.05em; margin-left: 2px;
+    vertical-align: -0.15em; background: var(--accent);
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .foot-meta { color: var(--faint); font-size: 0.85rem; margin-top: 8px; }
+  .foot-meta button {
+    background: none; border: none; padding: 0; font: inherit; cursor: pointer;
+    color: var(--muted); text-decoration: underline; text-underline-offset: 3px;
+  }
+  .foot-meta button:hover { color: var(--accent); }
+  #game-overlay {
+    position: fixed; inset: 0; z-index: 99;
+    background: rgba(28,35,51,.55); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #game-overlay[hidden] { display: none; }
+  .game-box {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; box-shadow: 0 24px 60px rgba(28,35,51,.25);
+  }
+  .game-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--serif); font-weight: 600; font-size: 1.1rem; margin-bottom: 12px;
+  }
+  .game-head button { background: none; border: none; font-size: 1.3rem; line-height: 1; cursor: pointer; color: var(--muted); }
+  .game-head button:hover { color: var(--accent); }
+  #game-canvas { display: block; border-radius: 10px; background: #f6f7fb; max-width: 82vw; height: auto; }
+  .game-hint { color: var(--faint); font-size: 0.8rem; margin-top: 10px; text-align: center; }
 </style>
 </head>
 <body>
@@ -136,8 +169,7 @@
       <div class="kicker">Hi, I'm</div>
       <h1>Caesar <span class="realname">(officially Zichao Lin)</span></h1>
       <p class="bio">
-        Currently working at Moonshot AI.<br>
-        Research interest in MLLM & Agents
+        <span id="typed">Currently working at Moonshot AI.</span><span class="caret" aria-hidden="true"></span>
       </p>
       <div class="hero-links">
         <a href="https://github.com/Caesar-s1mple" target="_blank" rel="noopener" aria-label="GitHub">
@@ -225,7 +257,122 @@ document.getElementById("wx-btn").addEventListener("click", async () => {
 <footer class="footer">
   <p>© 2026 Caesar-s1mple · <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">Site source</a> · Deployed via GitHub Pages</p>
   <p class="egg">站点自检:1 + 1 = 2 ✓ 一切正常</p>
+  <p class="foot-meta">
+    本地时间 <span id="clock">--:--:--</span> ·
+    总访问 <span id="busuanzi_value_site_pv">–</span> 次 · 访客 <span id="busuanzi_value_site_uv">–</span> 人 ·
+    <button id="game-open" type="button">摸鱼一下</button>
+  </p>
 </footer>
+
+<div id="game-overlay" hidden>
+  <div class="game-box">
+    <div class="game-head"><span>贪吃蛇 · 得分 <span id="game-score">0</span></span><button id="game-close" type="button" aria-label="关闭">×</button></div>
+    <canvas id="game-canvas" width="400" height="400"></canvas>
+    <p class="game-hint">方向键 / WASD 控制 · 空格暂停 · Esc 关闭 · <span id="game-status">吃到绿色方块加分</span></p>
+  </div>
+</div>
+
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+// ---------- 实时时钟 ----------
+const clockEl = document.getElementById("clock");
+const tickClock = () => { clockEl.textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false }); };
+tickClock(); setInterval(tickClock, 1000);
+
+// ---------- 打字机 ----------
+const phrases = ["Currently working at Moonshot AI.", "Research interest in MLLM & Agents."];
+const typed = document.getElementById("typed");
+let pi = 0, ci = phrases[0].length, del = true;
+function typeTick() {
+  let wait;
+  if (del) {
+    ci--; wait = 26;
+    if (ci <= 0) { ci = 0; del = false; pi = (pi + 1) % phrases.length; wait = 450; }
+  } else {
+    ci++; wait = 55;
+    if (ci >= phrases[pi].length) { ci = phrases[pi].length; del = true; wait = 2600; }
+  }
+  typed.textContent = phrases[pi].slice(0, ci);
+  setTimeout(typeTick, wait);
+}
+setTimeout(typeTick, 2800);
+
+// ---------- 贪吃蛇 ----------
+const overlay = document.getElementById("game-overlay");
+const canvas = document.getElementById("game-canvas");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("game-score");
+const statusEl = document.getElementById("game-status");
+const N = 20, CELL = 20;
+let snake, dir, nextDir, food, score, paused, alive, loop = null;
+
+function resetGame() {
+  snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  dir = nextDir = {x:1,y:0};
+  score = 0; paused = false; alive = true;
+  scoreEl.textContent = "0";
+  statusEl.textContent = "吃到绿色方块加分";
+  placeFood();
+}
+function placeFood() {
+  do { food = { x: Math.floor(Math.random()*N), y: Math.floor(Math.random()*N) }; }
+  while (snake.some(s => s.x === food.x && s.y === food.y));
+}
+function roundRect(x, y, w, h) { ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); }
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#0d9488";
+  roundRect(food.x*CELL + 2, food.y*CELL + 2, CELL - 4, CELL - 4);
+  snake.forEach((s, i) => {
+    ctx.fillStyle = i === 0 ? "#3b4fd8" : "rgba(59,79,216," + (1 - i / snake.length * 0.6) + ")";
+    roundRect(s.x*CELL + 1, s.y*CELL + 1, CELL - 2, CELL - 2);
+  });
+}
+function step() {
+  if (paused || !alive) return;
+  dir = nextDir;
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+  if (head.x < 0 || head.x >= N || head.y < 0 || head.y >= N || snake.some(s => s.x === head.x && s.y === head.y)) {
+    alive = false;
+    statusEl.textContent = "GG · 按方向键重开";
+    return;
+  }
+  snake.unshift(head);
+  if (head.x === food.x && head.y === food.y) { score++; scoreEl.textContent = score; placeFood(); }
+  else snake.pop();
+  draw();
+}
+function openGame() {
+  overlay.hidden = false;
+  resetGame(); draw();
+  loop = setInterval(step, 120);
+}
+function closeGame() {
+  overlay.hidden = true;
+  clearInterval(loop); loop = null;
+}
+const KEYS = {
+  ArrowUp:{x:0,y:-1}, KeyW:{x:0,y:-1}, ArrowDown:{x:0,y:1}, KeyS:{x:0,y:1},
+  ArrowLeft:{x:-1,y:0}, KeyA:{x:-1,y:0}, ArrowRight:{x:1,y:0}, KeyD:{x:1,y:0}
+};
+document.addEventListener("keydown", e => {
+  if (overlay.hidden) return;
+  if (e.code === "Escape") { closeGame(); return; }
+  if (e.code === "Space") {
+    paused = !paused;
+    statusEl.textContent = paused ? "已暂停" : "吃到绿色方块加分";
+    e.preventDefault(); return;
+  }
+  const d = KEYS[e.code];
+  if (!d) return;
+  e.preventDefault();
+  if (!alive) resetGame();
+  if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
+});
+document.getElementById("game-open").addEventListener("click", openGame);
+document.getElementById("game-close").addEventListener("click", closeGame);
+overlay.addEventListener("click", e => { if (e.target === overlay) closeGame(); });
+</script>
 
 </body>
 </html>
