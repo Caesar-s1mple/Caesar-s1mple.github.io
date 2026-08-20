@@ -145,7 +145,25 @@
   }
   .game-head button { background: none; border: none; font-size: 1.3rem; line-height: 1; cursor: pointer; color: var(--muted); }
   .game-head button:hover { color: var(--accent); }
-  #game-canvas { display: block; border-radius: 10px; background: #f6f7fb; max-width: 82vw; height: auto; }
+  #game-holder {
+    position: relative; width: min(780px, 84vw); aspect-ratio: 16 / 10;
+    border-radius: 12px; overflow: hidden; background: #0b0f1e; cursor: crosshair;
+  }
+  #game-holder canvas { display: block; width: 100%; height: 100%; }
+  #game-hud {
+    position: absolute; top: 10px; left: 14px; z-index: 2; pointer-events: none;
+    color: #cdd5ff; font-family: var(--mono); font-size: 0.82rem;
+    text-shadow: 0 1px 6px rgba(0,0,0,.6);
+  }
+  #game-hud b { color: #fff; }
+  #game-msg {
+    position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; text-align: center;
+    color: #e8ecff; background: rgba(11,15,30,.55); cursor: pointer; padding: 0 24px;
+  }
+  #game-msg b { font-family: var(--serif); font-size: 1.6rem; }
+  #game-msg span { font-size: 0.85rem; color: #aab3d6; line-height: 1.7; }
+  #game-msg[hidden] { display: none; }
   .game-hint { color: var(--faint); font-size: 0.8rem; margin-top: 10px; text-align: center; }
 </style>
 </head>
@@ -266,9 +284,12 @@ document.getElementById("wx-btn").addEventListener("click", async () => {
 
 <div id="game-overlay" hidden>
   <div class="game-box">
-    <div class="game-head"><span>贪吃蛇 · 得分 <span id="game-score">0</span></span><button id="game-close" type="button" aria-label="关闭">×</button></div>
-    <canvas id="game-canvas" width="400" height="400"></canvas>
-    <p class="game-hint">方向键 / WASD 控制 · 空格暂停 · Esc 关闭 · <span id="game-status">吃到绿色方块加分</span></p>
+    <div class="game-head"><span>霓虹穿梭 · Neon Runner</span><button id="game-close" type="button" aria-label="关闭">×</button></div>
+    <div id="game-holder">
+      <div id="game-hud">得分 <b id="game-score">0</b> · 最高 <b id="game-best">0</b> · 速度 <b id="game-speed">1.0x</b></div>
+      <div id="game-msg"><b>霓虹穿梭</b><span>← → / A D 或移动鼠标控制飞船<br>躲开霓虹方块,吃金色光球 · 点击开始</span></div>
+    </div>
+    <p class="game-hint">Esc 或点击背景关闭 · 3D 渲染由 Three.js 驱动</p>
   </div>
 </div>
 
@@ -296,82 +317,302 @@ function typeTick() {
   setTimeout(typeTick, wait);
 }
 setTimeout(typeTick, 2800);
+</script>
 
-// ---------- 贪吃蛇 ----------
+<script type="importmap">
+{ "imports": { "three": "https://cdn.staticfile.org/three.js/0.160.0/three.module.min.js" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+
 const overlay = document.getElementById("game-overlay");
-const canvas = document.getElementById("game-canvas");
-const ctx = canvas.getContext("2d");
+const holder  = document.getElementById("game-holder");
 const scoreEl = document.getElementById("game-score");
-const statusEl = document.getElementById("game-status");
-const N = 20, CELL = 20;
-let snake, dir, nextDir, food, score, paused, alive, loop = null;
+const bestEl  = document.getElementById("game-best");
+const speedEl = document.getElementById("game-speed");
+const msg     = document.getElementById("game-msg");
 
-function resetGame() {
-  snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
-  dir = nextDir = {x:1,y:0};
-  score = 0; paused = false; alive = true;
-  scoreEl.textContent = "0";
-  statusEl.textContent = "吃到绿色方块加分";
-  placeFood();
+const LANES = [-6, -3, 0, 3, 6];
+const SPAWN_Z = -230, KILL_Z = 12, X_RANGE = 7.6;
+
+let renderer, scene, camera, ship, grid, starField;
+let inited = false, rafId = null;
+let playing = false, dead = false;
+let obstacles = [], orbs = [], boom = null;
+let score = 0, speedZ = 30, spawnT = 0, shipX = 0, targetX = 0, shake = 0;
+let best = 0;
+try { best = +localStorage.getItem("neon-best") || 0; } catch {}
+bestEl.textContent = best;
+const clock3 = new THREE.Clock();
+
+// 极简音效:WebAudio 振荡器,无需音频文件
+let ac = null;
+function beep(f0, f1, dur, type = "sine", vol = 0.08) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), ac.currentTime + dur);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + dur);
+  } catch {}
 }
-function placeFood() {
-  do { food = { x: Math.floor(Math.random()*N), y: Math.floor(Math.random()*N) }; }
-  while (snake.some(s => s.x === food.x && s.y === food.y));
-}
-function roundRect(x, y, w, h) { ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); }
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#0d9488";
-  roundRect(food.x*CELL + 2, food.y*CELL + 2, CELL - 4, CELL - 4);
-  snake.forEach((s, i) => {
-    ctx.fillStyle = i === 0 ? "#3b4fd8" : "rgba(59,79,216," + (1 - i / snake.length * 0.6) + ")";
-    roundRect(s.x*CELL + 1, s.y*CELL + 1, CELL - 2, CELL - 2);
-  });
-}
-function step() {
-  if (paused || !alive) return;
-  dir = nextDir;
-  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-  if (head.x < 0 || head.x >= N || head.y < 0 || head.y >= N || snake.some(s => s.x === head.x && s.y === head.y)) {
-    alive = false;
-    statusEl.textContent = "GG · 按方向键重开";
-    return;
+
+const boxMats = [
+  new THREE.MeshStandardMaterial({ color: 0x3b4fd8, emissive: 0x2a3ab0, emissiveIntensity: 0.55, roughness: 0.35, metalness: 0.4 }),
+  new THREE.MeshStandardMaterial({ color: 0x0d9488, emissive: 0x0b6f66, emissiveIntensity: 0.55, roughness: 0.35, metalness: 0.4 }),
+  new THREE.MeshStandardMaterial({ color: 0xd83b8f, emissive: 0xa02468, emissiveIntensity: 0.55, roughness: 0.35, metalness: 0.4 }),
+];
+const orbMat = new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0xffb703, emissiveIntensity: 1.2 });
+
+function initThree() {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  holder.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0f1e);
+  scene.fog = new THREE.Fog(0x0b0f1e, 40, 170);
+
+  camera = new THREE.PerspectiveCamera(72, 1.6, 0.1, 500);
+  camera.position.set(0, 3.4, 7.5);
+
+  scene.add(new THREE.AmbientLight(0x8899ff, 0.6));
+  const dl = new THREE.DirectionalLight(0xffffff, 0.9);
+  dl.position.set(4, 10, 6);
+  scene.add(dl);
+
+  // 飞船:四棱锥,机头朝 -z
+  const body = new THREE.Mesh(
+    new THREE.ConeGeometry(0.55, 1.9, 4),
+    new THREE.MeshStandardMaterial({ color: 0x3b4fd8, emissive: 0x3b4fd8, emissiveIntensity: 0.6, metalness: 0.6, roughness: 0.3 })
+  );
+  body.rotation.x = -Math.PI / 2;
+  ship = new THREE.Group();
+  ship.add(body);
+  const glow = new THREE.PointLight(0x3b4fd8, 30, 16);
+  glow.position.set(0, 0.6, 0.5);
+  ship.add(glow);
+  ship.position.set(0, 1, 0);
+  scene.add(ship);
+
+  grid = new THREE.GridHelper(500, 100, 0x3b4fd8, 0x1c2340);
+  grid.position.z = -100;
+  scene.add(grid);
+
+  // 星空
+  const n = 900, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    pos[i*3]   = (Math.random() - 0.5) * 400;
+    pos[i*3+1] = Math.random() * 120 + 2;
+    pos[i*3+2] = -Math.random() * 380 + 20;
   }
-  snake.unshift(head);
-  if (head.x === food.x && head.y === food.y) { score++; scoreEl.textContent = score; placeFood(); }
-  else snake.pop();
-  draw();
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  starField = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x9aa7ff, size: 0.55, transparent: true, opacity: 0.8 }));
+  scene.add(starField);
+
+  window.addEventListener("resize", fitSize);
+  inited = true;
 }
+
+function fitSize() {
+  if (!renderer) return;
+  const w = holder.clientWidth || 720;
+  const h = holder.clientHeight || Math.round(w * 0.625);
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+function spawnWave() {
+  const lanes = LANES.slice();
+  for (let i = lanes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+  }
+  const nBlock = Math.min(4, 1 + Math.floor(Math.random() * Math.min(3, 1 + score / 500)));
+  const blocked = lanes.slice(0, nBlock);
+  for (const x of blocked) {
+    const h = 1.2 + Math.random() * 3.4;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(2.3, h, 2.2), boxMats[Math.floor(Math.random() * boxMats.length)]);
+    m.position.set(x, h / 2, SPAWN_Z);
+    scene.add(m);
+    obstacles.push(m);
+  }
+  if (Math.random() < 0.55) {
+    const free = lanes.filter(x => !blocked.includes(x));
+    if (free.length) {
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), orbMat);
+      orb.position.set(free[Math.floor(Math.random() * free.length)], 1, SPAWN_Z - 4);
+      scene.add(orb);
+      orbs.push(orb);
+    }
+  }
+}
+
+function explode() {
+  const n = 130, p = new Float32Array(n * 3), v = [];
+  for (let i = 0; i < n; i++) {
+    p[i*3] = ship.position.x; p[i*3+1] = 1; p[i*3+2] = 0;
+    const a = Math.random() * Math.PI * 2, b = Math.random() * Math.PI - Math.PI / 2, s = 4 + Math.random() * 10;
+    v.push(new THREE.Vector3(Math.cos(a)*Math.cos(b)*s, Math.abs(Math.sin(b))*s*0.9 + 2, Math.sin(a)*Math.cos(b)*s*0.5));
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(p, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffa94d, size: 0.32, transparent: true, opacity: 1 }));
+  scene.add(pts);
+  boom = { pts, v, life: 1.3 };
+}
+
+function updateBoom(dt) {
+  if (!boom) return;
+  boom.life -= dt;
+  const arr = boom.pts.geometry.attributes.position.array;
+  for (let i = 0; i < boom.v.length; i++) {
+    arr[i*3]   += boom.v[i].x * dt;
+    arr[i*3+1] += boom.v[i].y * dt;
+    arr[i*3+2] += boom.v[i].z * dt;
+    boom.v[i].y -= 12 * dt;
+  }
+  boom.pts.geometry.attributes.position.needsUpdate = true;
+  boom.pts.material.opacity = Math.max(0, boom.life / 1.3);
+  if (boom.life <= 0) {
+    scene.remove(boom.pts);
+    boom.pts.geometry.dispose(); boom.pts.material.dispose();
+    boom = null;
+  }
+}
+
+function clearField() {
+  for (const o of obstacles) { scene.remove(o); o.geometry.dispose(); }
+  for (const o of orbs)      { scene.remove(o); o.geometry.dispose(); }
+  obstacles = []; orbs = [];
+  if (boom) { scene.remove(boom.pts); boom.pts.geometry.dispose(); boom.pts.material.dispose(); boom = null; }
+}
+
+function start() {
+  clearField();
+  score = 0; speedZ = 30; spawnT = 0.4; shipX = targetX = 0; shake = 0;
+  ship.visible = true;
+  ship.position.x = 0; ship.rotation.set(0, 0, 0);
+  playing = true; dead = false;
+  msg.hidden = true;
+  clock3.getDelta();
+  beep(520, 880, 0.18, "triangle");
+}
+
+function die() {
+  playing = false; dead = true;
+  explode(); ship.visible = false; shake = 1;
+  beep(200, 40, 0.5, "sawtooth", 0.12);
+  const s = Math.floor(score);
+  if (s > best) {
+    best = s; bestEl.textContent = best;
+    try { localStorage.setItem("neon-best", best); } catch {}
+  }
+  msg.innerHTML = "<b>坠毁了</b><span>得分 " + s + " · 最高 " + best + "<br>点击或按回车重开 · Esc 关闭</span>";
+  msg.hidden = false;
+}
+
+function frame() {
+  rafId = requestAnimationFrame(frame);
+  const dt = Math.min(clock3.getDelta(), 0.05);
+
+  if (playing) {
+    score += dt * speedZ * 0.9;
+    speedZ = Math.min(88, 30 + score * 0.012);
+    spawnT -= dt;
+    if (spawnT <= 0) { spawnWave(); spawnT = (24 + Math.random() * 16) / speedZ; }
+
+    shipX += (targetX - shipX) * Math.min(1, dt * 9);
+    ship.position.x = shipX;
+    ship.rotation.z = -(targetX - shipX) * 0.16;
+
+    grid.position.z += speedZ * dt;
+    if (grid.position.z > -95) grid.position.z -= 5;
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const o = obstacles[i];
+      o.position.z += speedZ * dt;
+      if (o.position.z > KILL_Z) { scene.remove(o); o.geometry.dispose(); obstacles.splice(i, 1); continue; }
+      if (Math.abs(o.position.z) < 2 && Math.abs(o.position.x - shipX) < 1.85) { die(); break; }
+    }
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const o = orbs[i];
+      o.position.z += speedZ * dt;
+      o.rotation.y += dt * 3;
+      if (o.position.z > KILL_Z) { scene.remove(o); o.geometry.dispose(); orbs.splice(i, 1); continue; }
+      if (Math.abs(o.position.z) < 1.6 && Math.abs(o.position.x - shipX) < 1.35) {
+        score += 120;
+        beep(880, 1560, 0.14, "triangle", 0.07);
+        scene.remove(o); o.geometry.dispose(); orbs.splice(i, 1);
+      }
+    }
+    scoreEl.textContent = Math.floor(score);
+    speedEl.textContent = (speedZ / 30).toFixed(1) + "x";
+  }
+
+  updateBoom(dt);
+
+  if (shake > 0.01) {
+    camera.position.x = (Math.random() - 0.5) * shake;
+    camera.position.y = 3.4 + (Math.random() - 0.5) * shake;
+    shake *= 0.88;
+  } else {
+    camera.position.x = 0;
+    camera.position.y = 3.4;
+  }
+  camera.lookAt(shipX * 0.4, 1, -12);
+  starField.rotation.y += dt * 0.005;
+  renderer.render(scene, camera);
+}
+
 function openGame() {
   overlay.hidden = false;
-  resetGame(); draw();
-  loop = setInterval(step, 120);
+  if (!inited) initThree();
+  fitSize();
+  if (!rafId) rafId = requestAnimationFrame(frame);
+  msg.hidden = false;
+  if (!playing && !dead) {
+    msg.innerHTML = "<b>霓虹穿梭</b><span>← → / A D 或移动鼠标控制飞船<br>躲开霓虹方块,吃金色光球 · 点击开始</span>";
+  }
 }
 function closeGame() {
   overlay.hidden = true;
-  clearInterval(loop); loop = null;
+  playing = false;
+  cancelAnimationFrame(rafId);
+  rafId = null;
 }
-const KEYS = {
-  ArrowUp:{x:0,y:-1}, KeyW:{x:0,y:-1}, ArrowDown:{x:0,y:1}, KeyS:{x:0,y:1},
-  ArrowLeft:{x:-1,y:0}, KeyA:{x:-1,y:0}, ArrowRight:{x:1,y:0}, KeyD:{x:1,y:0}
-};
-document.addEventListener("keydown", e => {
-  if (overlay.hidden) return;
-  if (e.code === "Escape") { closeGame(); return; }
-  if (e.code === "Space") {
-    paused = !paused;
-    statusEl.textContent = paused ? "已暂停" : "吃到绿色方块加分";
-    e.preventDefault(); return;
-  }
-  const d = KEYS[e.code];
-  if (!d) return;
-  e.preventDefault();
-  if (!alive) resetGame();
-  if (d.x !== -dir.x || d.y !== -dir.y) nextDir = d;
-});
+
 document.getElementById("game-open").addEventListener("click", openGame);
 document.getElementById("game-close").addEventListener("click", closeGame);
 overlay.addEventListener("click", e => { if (e.target === overlay) closeGame(); });
+msg.addEventListener("click", () => { if (!playing) start(); });
+
+document.addEventListener("keydown", e => {
+  if (overlay.hidden) return;
+  if (e.code === "Escape") { closeGame(); return; }
+  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code)) e.preventDefault();
+  if (!playing) { if (e.code === "Enter" || e.code === "Space") start(); return; }
+  if (e.code === "ArrowLeft"  || e.code === "KeyA") targetX = Math.max(-X_RANGE, targetX - 3);
+  if (e.code === "ArrowRight" || e.code === "KeyD") targetX = Math.min( X_RANGE, targetX + 3);
+});
+holder.addEventListener("mousemove", e => {
+  if (!playing) return;
+  const r = holder.getBoundingClientRect();
+  targetX = THREE.MathUtils.clamp(((e.clientX - r.left) / r.width * 2 - 1) * X_RANGE, -X_RANGE, X_RANGE);
+});
+holder.addEventListener("touchmove", e => {
+  if (!playing) return;
+  const r = holder.getBoundingClientRect();
+  const t = e.touches[0];
+  targetX = THREE.MathUtils.clamp(((t.clientX - r.left) / r.width * 2 - 1) * X_RANGE, -X_RANGE, X_RANGE);
+  e.preventDefault();
+}, { passive: false });
 </script>
 
 </body>
