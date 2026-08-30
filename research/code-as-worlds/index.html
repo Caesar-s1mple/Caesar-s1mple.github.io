@@ -57,6 +57,10 @@
   }
   .art h2:first-of-type { margin-top: 0; }
   .sec-intro { color: var(--muted); font-size: 0.95rem; margin-bottom: 30px; max-width: 700px; }
+  .fig { margin: 26px 0; }
+  .fig img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .fig figcaption { margin-top: 10px; font-size: 0.82rem; color: var(--faint); line-height: 1.55; }
+  .fig figcaption b { color: var(--muted); }
   .art p.body-p { margin: 14px 0; font-size: 0.95rem; }
   .art p.body-p strong { color: var(--ink); }
 
@@ -218,6 +222,11 @@
       数据层把通过验证的世界转成 World-Space VQA 训练数据,配合像素级数据做 SFT + GRPO 强化学习。
       下面按动机、表示、闭环、数据、实验的顺序拆解,最后给出局限与可复现性清单。
     </p>
+    <figure class="fig">
+      <img src="assets/fig1-overview.png" alt="Code-as-World 总览:EWR 三元组(Composition/Evolution/Appearance)与下游应用">
+      <figcaption><b>论文 Figure 1</b>:Code-as-World 把物理世界表示为可执行代码——左侧 EWR 三元组(scene.json 片段),
+      中间统一的可执行世界与多场景渲染,右侧落地应用(定量物理推理、物理一致的视频生成、具身智能)。</figcaption>
+    </figure>
 
     <!-- ========== 2. 动机 ========== -->
     <h2 id="sec-motivation">2 · 动机:识别现象 ≠ 恢复机制</h2>
@@ -245,6 +254,11 @@
         <td>紧凑、组合、可迁移,但离散 token 难以精确编码连续几何、轨迹、接触关系、物理参数</td>
       </tr>
     </table>
+    <figure class="fig">
+      <img src="assets/fig2-paradigms.png" alt="四种世界表示范式对比:像素视频/3D 重建/自然语言 vs Code as World">
+      <figcaption><b>论文 Figure 2</b>:四种世界表示的对比——像素/视频(有细节无结构)、3D 重建(有几何无机制)、
+      自然语言(有语义无连续状态),Code as World 同时拿到结构、语义、连续与物理机制。</figcaption>
+    </figure>
     <p class="body-p">
       于是痛点被定位成:需要一种「<strong>像语言一样有语义、像重建一样有结构、像生成模型一样能建模时间演化</strong>」的表示。
       可执行代码恰好同时满足四个性质——<strong>语义、结构、连续状态、可执行</strong>。这直接回应了 scalable simulation / world model 的两个老难题:
@@ -299,6 +313,16 @@
     <!-- ========== 4. 闭环 ========== -->
     <h2 id="sec-loop">4 · Agentic discovery 闭环:propose → verify,拒绝也是合法输出</h2>
     <p class="sec-intro">闭环(Algorithm 1)的输入是证据 ξ、LLM A、迭代预算 K(评测中 K=5);每轮五步,终止于 Accept 或预算耗尽的 Reject。</p>
+    <figure class="fig">
+      <img src="assets/fig3-text-evidence.png" alt="Agentic discovery loop:证据构造、propose-instantiate-execute-render-verify 闭环">
+      <figcaption><b>论文 Figure 3</b>:Agentic discovery loop 全貌——左侧 EWR 三元组,中间 propose → instantiate →
+      execute → render → verify 的迭代闭环,右侧两种模态的证据构造(文本 → 实体/空间关系/事件/结局的语义证据;真实视频 → RGB/深度/实例/轨迹的视觉证据)。</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="assets/algo1-pseudocode.png" alt="Algorithm 1 伪代码:agentic discovery of executable world representations">
+      <figcaption><b>论文 Algorithm 1</b>:闭环伪代码——每轮 ModifyEWR(提出/修订)→ CompileEWR(编译)→ RunSimulation(执行轨迹)→
+      Render/Project(渲染投影)→ 逐帧 CompareAndDiagnose(差异聚合为 Δ);Accept 返回 (p, z),预算耗尽返回 (Reject, z)。</figcaption>
+    </figure>
     <h3>4.1 证据构造:两条输入线</h3>
     <p class="body-p">
       模态特定的 evidence adapter 把输入变成约束同一 EWR 空间的证据 η。<strong>文本驱动</strong>时,LLM agent 从文本抽取显式实体、
@@ -362,6 +386,11 @@
       <li><strong>Image-Space 数据(D_pix,配套)</strong>:73,335 条像素级 QA——46,763 条来自 GOT-10K(20,858 speed、8,399 velocity、12,169 acceleration、3,995 grounding、1,342 size),26,572 条来自 RefCOCO/RefCOCO+/RefCOCOg/RefCLEF(16,989 grounding、9,583 size)。已剔除与评测数据重叠的图像;运动量用中心差分公式计算(论文 Eq.2),每段视频统一采样 16 帧。</li>
       <li><strong>RL 训练信号</strong>:GRPO,reward = r_num + λ_u·r_unit + λ_f·r_fmt,其中 r_num = exp(−|ŷ−y|/(|y|+ε))——尺度归一的数值精度 + 单位正确 + 格式正确。</li>
     </ul>
+    <figure class="fig">
+      <img src="assets/fig13-scenejson.png" alt="scene.json 与 simulation_sdk.py 实例:EWR 的具体编码">
+      <figcaption><b>论文 Figure 13</b>:一个视频驱动世界的具体编码——左上证据帧与仿真帧对照;scene.json 结构化描述
+      composition/evolution/appearance;simulation_sdk.py 负责把语义级场景编译为 MuJoCo 参数(「object-level execution is semantic; all numeric fitting remains SDK-owned」)。</figcaption>
+    </figure>
 
     <h3>5.4 规模与成本</h3>
     <p class="body-p">
@@ -389,6 +418,16 @@
       <strong>Physics engine(附录 C.2,图 11)</strong>:同样 5 轮单调改善(VA ~0.54→0.60,IoU ~0.38→0.42,Traj-ADE ~29→26,
       Vel-ADE ~26.2→25.4,Acc@2%D ~40→48),第 5 轮在<strong>全部 5 个指标</strong>上超过同预算 Best-of-5——迭代增益不依赖特定执行引擎。
     </p>
+    <figure class="fig">
+      <img src="assets/fig5-anim-curves.png" alt="Animation engine 下 discovery loop 五轮迭代曲线,对比 Best-of-5">
+      <figcaption><b>论文 Figure 5(animation engine)</b>:五轮迭代的指标曲线——Visual Alignment / Object IoU / Accuracy@2%D 上行,
+      Traj-ADE / Velocity-ADE 下行;虚线为同预算 Best-of-5 基线,多数指标上 agentic loop 更优。</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="assets/fig11-physics-curves.png" alt="Physics engine 下 discovery loop 五轮迭代曲线,对比 Best-of-5">
+      <figcaption><b>论文 Figure 11(physics engine)</b>:换用 physics 执行引擎后曲线同样单调改善,第 5 轮在全部 5 个指标上
+      超过同预算 Best-of-5——迭代增益不绑定特定执行引擎。</figcaption>
+    </figure>
 
     <h3>6.2 QuantiPhy 主表:9B 直答超过 Gemini-3.1-Flash</h3>
     <p class="body-p">
@@ -440,6 +479,11 @@
       <tr><td>Simulator Render</td><td>3.000</td><td>406.872</td><td>1.682</td><td>0.404</td><td>78.81</td></tr>
       <tr><td>Sim-to-Real Video</td><td class="r1">1.484</td><td class="r1">185.321</td><td>1.677</td><td>0.472</td><td>77.49</td></tr>
     </table>
+    <figure class="fig">
+      <img src="assets/fig4-resimulation.png" alt="可控重仿真:编辑 EWR 后的仿真 rollout 与 sim-to-real 视频帧对照">
+      <figcaption><b>论文 Figure 4</b>:可控重仿真——编辑 EWR(改变瞄准方向、切换视角)后的仿真 rollout(左四列)与其
+      sim-to-real 真实感视频的时间对齐帧(右四列):改的是世界参数,变的是可控的结果,物理一致性不变。</figcaption>
+    </figure>
     <p class="body-p">
       即重渲染把视频拉近真实分布(JEDi 3.000→1.484,TRAJAN 406.9→185.3),而 CoTracker 追踪对仿真 GT 轨迹的误差基本不变——
       「提升外观而不改变 EWR 规定的物理演化」,标签可靠性不受损。
