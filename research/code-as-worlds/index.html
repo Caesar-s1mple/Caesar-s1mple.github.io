@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code as Worlds:把物理世界变成可执行代码 · Caesar-s1mple</title>
+<meta name="description" content="MirroS Technical Report 深度解读:可执行世界表示 EWR=(物理组成, 动态演化, 视觉外观)、propose-execute-verify 的 agentic 发现闭环、数据生产线与 QuantiPhy 实验全景。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  /* ---------- 文章头 ---------- */
+  .article-head { padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+  .crumb { font-size: 0.84rem; color: var(--faint); margin-bottom: 22px; }
+  .crumb a { color: var(--muted); }
+  .article-head h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.2; letter-spacing: -0.3px;
+    margin: 12px 0 16px; max-width: 780px;
+  }
+  .article-sub { color: var(--muted); font-size: 1.02rem; max-width: 720px; }
+  .article-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; font-size: 0.85rem; color: var(--faint); align-items: center; }
+  .pill {
+    font-size: 0.72rem; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .pill.green { background: rgba(13,148,136,.1); color: var(--teal); }
+  .abstract {
+    margin-top: 28px; max-width: 760px;
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 18px 22px;
+    font-size: 0.92rem; color: var(--muted);
+  }
+  .abstract strong { color: var(--ink); }
+
+  /* ---------- 双栏布局 ---------- */
+  .layout {
+    display: grid; grid-template-columns: 250px minmax(0, 780px);
+    gap: 56px; justify-content: center; padding-top: 48px;
+  }
+
+  /* ---------- 目录 ---------- */
+  .toc { position: sticky; top: 86px; align-self: start; max-height: calc(100vh - 110px); overflow-y: auto; padding-right: 8px; }
+  .toc-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; color: var(--faint); text-transform: uppercase; margin-bottom: 14px; }
+  .toc a { display: block; color: var(--muted); font-size: 0.85rem; padding: 4px 0 4px 14px; border-left: 2px solid var(--line); line-height: 1.45; }
+  .toc a:hover { color: var(--ink); text-decoration: none; }
+  .toc a.l1 { font-weight: 600; color: var(--ink); margin-top: 12px; }
+  .toc a.l2 { color: var(--muted); }
+  .toc a.on { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .toc-details { display: none; }
+
+  /* ---------- 章节 ---------- */
+  .art h2 {
+    font-family: var(--serif); font-size: 1.75rem; font-weight: 600;
+    margin: 72px 0 8px; padding-top: 20px; scroll-margin-top: 76px;
+  }
+  .art h2:first-of-type { margin-top: 0; }
+  .sec-intro { color: var(--muted); font-size: 0.95rem; margin-bottom: 30px; max-width: 700px; }
+  .art p.body-p { margin: 14px 0; font-size: 0.95rem; }
+  .art p.body-p strong { color: var(--ink); }
+
+  /* ---------- 总览 ---------- */
+  .statband { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 26px 0; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 16px; text-align: center;
+  }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--accent); }
+  .stat span { font-size: 0.78rem; color: var(--muted); }
+  .warn {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+    padding: 16px 20px; font-size: 0.88rem; color: #92400e; margin: 24px 0;
+  }
+  .warn strong { color: #78350f; }
+
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 20px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table.tbl th { text-align: left; font-size: 0.74rem; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #fcfbfa; }
+  table.tbl td { padding: 9px 14px; border-bottom: 1px solid #f1efe9; }
+  table.tbl tr:last-child td { border-bottom: none; }
+  table.tbl tr:hover td { background: #fafaf7; }
+  table.tbl td.r1 { font-weight: 700; color: var(--accent); }
+  .tbl-src { font-size: 0.78rem; color: var(--faint); margin-top: -10px; margin-bottom: 20px; }
+
+  /* ---------- 条形图 ---------- */
+  .chart { background: #fcfbfa; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
+  .chart-t { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.8rem; }
+  .bar-label { width: 150px; text-align: right; color: var(--muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.me { color: var(--accent); font-weight: 700; }
+  .bar-track { flex: 1; height: 16px; background: #f0eee8; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; background: #c7cdd8; min-width: 2px; }
+  .bar-fill.me { background: linear-gradient(90deg, var(--accent), var(--teal)); }
+  .bar-val { width: 56px; flex-shrink: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .bar-val.me { color: var(--ink); font-weight: 700; }
+  .chart-note { font-size: 0.76rem; color: var(--faint); margin-top: 10px; }
+
+  /* ---------- 思考 / 参考 ---------- */
+  .think { margin: 14px 0; }
+  .think h4 { font-family: var(--serif); font-size: 1.08rem; font-weight: 600; margin: 26px 0 6px; }
+  .think p { font-size: 0.93rem; color: #3a4354; }
+  .refs { font-size: 0.86rem; color: var(--muted); }
+  .refs li { margin-bottom: 8px; }
+  .back { display: inline-block; margin-top: 56px; font-size: 0.9rem; font-weight: 600; }
+
+  /* ---------- 本文特定 ---------- */
+  .art h3 { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; margin: 30px 0 6px; }
+  .art ul, .art ol { margin: 10px 0 16px 22px; font-size: 0.93rem; color: #3a4354; }
+  .art ul li, .art ol li { margin-bottom: 7px; line-height: 1.7; }
+  .art code { font-family: var(--mono); font-size: 0.82em; background: #f1efe9; border-radius: 5px; padding: 1px 6px; }
+
+  .ceagrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
+  .ceagrid > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .ceagrid b.t { display: block; font-family: var(--serif); font-size: 1.02rem; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .ceagrid p { font-size: 0.87rem; color: #3a4354; line-height: 1.65; }
+
+  .flow { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; margin: 20px 0; }
+  .fstep { flex: 1; min-width: 108px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .fstep b { display: block; font-size: 0.84rem; margin-bottom: 4px; }
+  .fstep span { font-size: 0.72rem; color: var(--faint); font-family: var(--mono); line-height: 1.5; display: block; }
+  .farrow { display: flex; align-items: center; color: var(--faint); font-size: 0.9rem; }
+
+  .note {
+    background: rgba(13,148,136,.06); border: 1px solid rgba(13,148,136,.28); border-radius: 12px;
+    padding: 16px 20px; font-size: 0.9rem; color: #115e59; margin: 24px 0; line-height: 1.7;
+  }
+  .note strong { color: #0f766e; }
+
+  .repro { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+  .repro > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .repro h4 { font-family: var(--serif); font-size: 1rem; font-weight: 600; margin-bottom: 8px; color: var(--accent); }
+  .repro ul { margin: 0 0 0 18px; }
+  .repro ul li { font-size: 0.86rem; color: #3a4354; margin-bottom: 6px; line-height: 1.6; }
+
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .toc { display: none; }
+    .toc-details { display: block; position: sticky; top: 58px; z-index: 40; background: rgba(250,249,246,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 0; margin-bottom: 10px; }
+    .toc-details summary { font-size: 0.88rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+    .toc-details a { display: block; padding: 5px 0; font-size: 0.85rem; color: var(--muted); }
+    .statband { grid-template-columns: repeat(2, 1fr); }
+    .ceagrid { grid-template-columns: 1fr; }
+    .repro { grid-template-columns: 1fr; }
+    .bar-label { width: 104px; font-size: 0.74rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/">Caesar<em>-s1mple</em></a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/#research" class="here">Research</a>
+      <a href="/#projects">Projects</a>
+      <a href="/#blog">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<header class="article-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">首页</a> / <a href="/#research">Research</a> / Code as Worlds 论文解读</div>
+    <div class="kicker">论文深度调研</div>
+    <h1>Code as Worlds:把物理世界变成可执行代码</h1>
+    <p class="article-sub">
+      MirroS 的 agentic 世界表示发现闭环——EWR 三元组、propose–instantiate–execute–render–verify 迭代、
+      数据生产线与 QuantiPhy 实验的一次全景解读。
+    </p>
+    <div class="article-meta">
+      <span class="pill">World Model</span>
+      <span class="pill green">Agentic Pipeline</span>
+      <span>📅 2026-08-30</span>
+      <span>⏱ 约 20 分钟</span>
+      <span>📄 MirroS Technical Report(2026-08-27)</span>
+    </div>
+    <div class="abstract">
+      <strong>摘要:</strong>《Code as Worlds: Agentic Discovery of Executable World Representations for Physical Reasoning》
+      是 MirroS 团队(联合清华大学、北京大学、南洋理工大学,项目负责人 Jialong Wu)发布的技术报告,标注日期 2026-08-27,
+      全文 30 页(正文 17 页 + 附录 A/B/C),配套 <a href="https://mirros.ai/blog/representing-physical-world" target="_blank" rel="noopener">官方博客</a>
+      与 <a href="https://github.com/mirros-lab/code-as-world" target="_blank" rel="noopener">代码仓库</a>。
+      核心主张一句话:把物理世界表示为<strong>可执行代码</strong>(Executable World Representation, EWR = 物理组成 + 动态演化 + 视觉外观),
+      用一个 agentic 闭环从文本或真实视频中「溯因式」地自动发现这种表示,再把验证过的可执行世界当作
+      <strong>可规模化、数值精确的物理监督信号</strong>训练 VLM——在定量物理推理基准 QuantiPhy 上,
+      9B 直答模型超过 Gemini-3.1-Flash,27B 推理版以 58.6 MRA 拿到全场最高。
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <!-- 目录(桌面) -->
+  <aside class="toc" id="toc"></aside>
+
+  <article class="art">
+    <!-- 目录(移动端) -->
+    <details class="toc-details">
+      <summary>📑 本文目录</summary>
+      <div id="toc-mobile"></div>
+    </details>
+
+    <!-- ========== 1. 总览 ========== -->
+    <h2 id="sec-overview">1 · 总览:世界即代码</h2>
+    <p class="body-p">
+      这篇技术报告试图回答一个 world model 领域的老问题:<strong>用什么表示物理世界,才能既精确又可规模化地监督模型?</strong>
+      它给出的答案是「代码」——不是描述世界的文本,而是能在物理仿真器里真正跑起来的可执行世界表示(EWR)。
+      每个 EWR 都是对一个物理场景的完整假设:有什么物体、遵循什么动力学、看起来什么样。它能被 MuJoCo 执行出显式的状态轨迹,
+      于是物体尺寸、位移、速度、加速度这些定量监督信号,可以直接从验证过的世界里「读」出来,而不需要给真实视频标注物理量。
+    </p>
+    <div class="statband">
+      <div class="stat"><b>(C, E, A)</b><span>EWR 三元组表示</span></div>
+      <div class="stat"><b>K = 5</b><span>发现闭环迭代预算</span></div>
+      <div class="stat"><b>1,585 + 988</b><span>World-Space VQA(文本线 + 视频线)</span></div>
+      <div class="stat"><b>58.6</b><span>QuantiPhy 全场最高 MRA(27B)</span></div>
+    </div>
+    <p class="body-p">
+      整套系统分三层:表示层定义 EWR 这个「合法可执行世界空间」;发现层用一个 LLM agent 在仿真器环境里迭代地提出、执行、验证假设;
+      数据层把通过验证的世界转成 World-Space VQA 训练数据,配合像素级数据做 SFT + GRPO 强化学习。
+      下面按动机、表示、闭环、数据、实验的顺序拆解,最后给出局限与可复现性清单。
+    </p>
+
+    <!-- ========== 2. 动机 ========== -->
+    <h2 id="sec-motivation">2 · 动机:识别现象 ≠ 恢复机制</h2>
+    <p class="sec-intro">论文的问题意识来自一个干净的二分:现象(phenomenon)与机制(mechanism)。</p>
+    <p class="body-p">
+      现有 VLM 在图像/视频-文本上训练,能识别、叙述、口头解释物理现象——但<strong>描述现象不等于恢复产生现象的机制</strong>。
+      缺少物体状态、物理参数、支配性动力学、对干预的响应这些显式表示,模型就无法可靠推理世界将如何演化。
+      论文(Section 2)系统比较了三种既有的世界表示范式,指出它们各自缺了一块:
+    </p>
+    <table class="tbl">
+      <tr><th>表示范式</th><th>思路</th><th>论文指出的缺陷</th></tr>
+      <tr>
+        <td><strong>像素/视频生成模型</strong></td>
+        <td>优化未来帧预测</td>
+        <td>不需要区分「相机动还是物体动」「遮挡还是消失」——多个相互矛盾的内部解释可以得到相近的预测准确率;<strong>视觉合理 ≠ 物理正确</strong></td>
+      </tr>
+      <tr>
+        <td><strong>3D 重建/逆图形</strong></td>
+        <td>从观测恢复几何与外观</td>
+        <td>可重建 ≠ 可解释:潜表示可能纠缠持久结构、动态变量和外观;恢复了几何,也不解释「为什么撤掉支撑会掉」</td>
+      </tr>
+      <tr>
+        <td><strong>自然语言</strong></td>
+        <td>用文本描述世界</td>
+        <td>紧凑、组合、可迁移,但离散 token 难以精确编码连续几何、轨迹、接触关系、物理参数</td>
+      </tr>
+    </table>
+    <p class="body-p">
+      于是痛点被定位成:需要一种「<strong>像语言一样有语义、像重建一样有结构、像生成模型一样能建模时间演化</strong>」的表示。
+      可执行代码恰好同时满足四个性质——<strong>语义、结构、连续状态、可执行</strong>。这直接回应了 scalable simulation / world model 的两个老难题:
+      (a) 学到的 world model 是隐式的,不可验证、不可干预;(b) 真实视频不带物理量标注,定量物理监督无法规模化。
+      Code-as-World 用验证过的 EWR 暴露出精确的世界空间状态轨迹,等于把监督「造」了出来。
+    </p>
+    <p class="body-p">
+      问题定义上,论文把「从不完整观测(文本/单目视频)恢复世界表示」明确建模为<strong>逆问题</strong>,
+      并类比科学发现中的<strong>溯因推理(abductive reasoning)</strong>:从噪声和不完整观测中,搜索「最能解释证据且足够简约」的假设。
+      这就是为什么世界表示应该被<em>发现</em>(agentic discovery)而不是被一次性<em>预测</em>出来。
+    </p>
+
+    <!-- ========== 3. EWR ========== -->
+    <h2 id="sec-ewr">3 · 表示:EWR = (C, E, A) 三元组</h2>
+    <p class="sec-intro">EWR 记作 p = (C, E, A) ∈ P_exec(合法可执行世界空间),三个组件各管一件事,且可独立检查、修改、执行。</p>
+    <div class="ceagrid">
+      <div>
+        <b class="t">C · 物理组成</b>
+        <p>场景中有什么:物体、几何、度量尺寸、质量/摩擦/重力等物理属性。地板、桌子、墙等环境结构也作为静态物理实体参与支撑、接触、碰撞。</p>
+      </div>
+      <div>
+        <b class="t">E · 动态演化</b>
+        <p>世界如何随时间展开:初始状态、时变、关键事件、仿真时长。给定 E 后,C 可展开为完整状态轨迹,产生接触、碰撞、速度变化与终止条件。</p>
+      </div>
+      <div>
+        <b class="t">A · 视觉外观</b>
+        <p>世界如何被观察:相机参数、背景、材质、光照、帧率、分辨率、渲染/视频生成配置。只参与视觉上下文的元素归 A,参与支撑/碰撞的归 C。</p>
+      </div>
+    </div>
+    <p class="body-p">
+      三元组的可拆解性是下游一切推理、仿真、验证、数据生成的基础:改一个物体、一个物理参数、一个动态条件或一个相机,
+      其余结构保持不变。论文同时强调「<strong>物理等价(组成、约束、演化一致)优先于像素级复刻</strong>」——这是它和逆图形路线的根本分歧。
+    </p>
+    <h3>3.1 落地形态:scene.json + MuJoCo SDK</h3>
+    <p class="body-p">
+      EWR 落地为一个 <code>scene.json</code> 加一套 simulation SDK,耦合对物理仿真引擎的程序化调用,仿真平台是 <strong>MuJoCo</strong>。
+      从论文 30 页的示例看,scene.json 的字段相当工程化:<code>coordinate_system</code>(handedness/up_axis/length_unit)、
+      <code>camera</code>(model/trajectory/binding)、<code>objects</code>(geometry + physics + initial_state)、
+      <code>relations</code>、<code>contact_events</code>、<code>simulator</code>(backend=mujoco、integrator=implicitfast、time_step=0.001、solver_iterations=100)、
+      <code>timeline</code>(fps、frame_count)等。SDK 注释里有一句关键分工:
+      「<strong>object-level execution is semantic; all numeric fitting remains SDK-owned</strong>」——agent 只写语义层,数值拟合由 SDK 负责。
+    </p>
+    <h3>3.2 双引擎与 sim-to-real 重渲染</h3>
+    <p class="body-p">
+      MuJoCo 之上支持两个可互换的执行引擎:<strong>animation engine</strong>(运动学方式,用时变位姿/轨迹描述「什么在动、怎么动」)
+      和 <strong>physics engine</strong>(用力学体、力、接触、约束推导运动)。两者实现同一 executable-world 接口,可独立于输入证据插拔;
+      主文用「视频证据 + animation engine」展示,physics engine 的结果放在附录 C.1/C.2。
+      仿真之后还有一步面向真实感的重渲染(sim-to-real):用 <strong>Wan2.2-VACE + 一个内部视频生成模型</strong>,
+      以 simulator render 为条件提升照片真实感,同时保持场景结构和时间动态。
+    </p>
+
+    <!-- ========== 4. 闭环 ========== -->
+    <h2 id="sec-loop">4 · Agentic discovery 闭环:propose → verify,拒绝也是合法输出</h2>
+    <p class="sec-intro">闭环(Algorithm 1)的输入是证据 ξ、LLM A、迭代预算 K(评测中 K=5);每轮五步,终止于 Accept 或预算耗尽的 Reject。</p>
+    <h3>4.1 证据构造:两条输入线</h3>
+    <p class="body-p">
+      模态特定的 evidence adapter 把输入变成约束同一 EWR 空间的证据 η。<strong>文本驱动</strong>时,LLM agent 从文本抽取显式实体、
+      空间关系、物理事件、预期结果,组织为结构化语义证据(<code>&lt;entities&gt; &lt;spatial relations&gt; &lt;physical events&gt; &lt;intended outcomes&gt;</code>);
+      文本通常不能完全确定几何/物理参数/相机,agent 结合物理先验与合理默认值初始化假设,再经仿真与语义验证逐步精化。
+      <strong>视频驱动</strong>时,从真实视频抽取深度图、实例 mask、物体 track 作为视觉证据;对每个分割出的场景物体用 3D 物体生成模型(SAM3D)建 mesh,
+      结合深度与追踪恢复空间位置、尺度、动态状态;候选 EWR 的 rollout 投影回输入视角,与观测几何/深度/mask/轨迹评估一致性并迭代精化。
+    </p>
+    <h3>4.2 每轮五步</h3>
+    <div class="flow">
+      <div class="fstep"><b>① Propose/Update</b><span>ModifyEWR(A, η, p, Δ):基于证据、当前假设与上轮反馈提出/修改 EWR</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>② Instantiate</b><span>CompileEWR(p):编译成仿真器接口参数 θ</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>③ Execute</b><span>RunSimulation(θ):跑出完整状态轨迹 τ(接触/碰撞/事件显式记录)</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>④ Render &amp; Project</b><span>τ 渲染为预测观测 X̂;视频线还投影深度 D̂、mask M̂、轨迹 Q̂</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>⑤ Verify</b><span>CompareAndDiagnose:关键帧逐帧比对,差异聚合成 Δ 指导下一轮</span></div>
+    </div>
+    <p class="body-p">
+      验证的侧重点随输入而变:文本输入主要评<strong>语义与物理约束</strong>,视频输入联合比较 <strong>RGB 外观、深度、mask、轨迹</strong>。
+      每轮把 (k, p, τ, Δ) 记入结构化 trace z。终止判定 <code>Accept(A, p, Δ)</code> 通过则返回 (p, z);
+      预算 K 耗尽则 <strong>Reject</strong>——注意,拒绝该假设也是合法输出,这正是数据质量的闸门。
+    </p>
+    <p class="body-p">
+      角色划分上,论文没有起 generator/verifier/reflector 式的花名:实质上是<strong>一个 LLM agent 身兼 proposer + verifier</strong>
+      (<code>ModifyEWR</code> 与 <code>CompareAndDiagnose</code>/<code>Accept</code> 调用的是同一个 A),仿真器充当确定性的执行/验证环境。
+      需要点名的是:<strong>基座模型与 agent 框架全文均未具名</strong>——discovery agent 用什么 LLM、什么 harness 完全没写,这是复现上最大的黑箱。
+    </p>
+    <p class="body-p">
+      与 Best-of-N 的关系值得单独说一句:闭环是同预算下的「<strong>定向搜索</strong>」——K=5 轮迭代精化 vs Best-of-5 独立采样,
+      在匹配的 5 次评估预算下,agentic loop 在多数指标上更优(数字见第 6 节)。
+    </p>
+
+    <!-- ========== 5. 数据 ========== -->
+    <h2 id="sec-data">5 · 数据侧:种子、质量 gate 与产出形态</h2>
+    <p class="sec-intro">两条输入线产出统一格式;可执行性由表示本身保证,质量由验证环 + 预算拒绝制把关。</p>
+
+    <h3>5.1 种子数据</h3>
+    <ul>
+      <li><strong>文本线(text-driven)</strong>:语言规格由 <strong>LLM 生成、再经人工标注员审核</strong>(「generated by LLMs and subsequently reviewed by human annotators」)。
+        示例 prompt 如「A cue ball strikes exactly three colored billiard balls on a felt table」「A row of wooden dominoes transfers angular momentum from left to right」——短场景描述,刚体/碰撞/滚动类为主。</li>
+      <li><strong>视频线(video-driven)</strong>:候选视频选自 <strong>WISA-80K</strong>(WISA: World Simulator Assistant,NeurIPS'26 的物理感知 T2V 数据集),经一套 motion-focused filtering pipeline:
+        ① 元数据筛选,保留有显著刚体运动或类碰撞交互的 clip;② 自动拒绝相机大幅平移/旋转、物体运动不足、严重剪辑、物理事件不完整的;③ 人工复核时间连续性、物体可见性、是否适合做可执行重建。</li>
+      <li><strong>感知工具链(视频线)</strong>:<strong>SAM3</strong> 出实例 mask 和图像平面 track,<strong>VGGT-Omega</strong> 估场景深度和相机几何,<strong>SAM3D</strong> 出物体几何/mesh。</li>
+    </ul>
+
+    <h3>5.2 质量 gate:Accept 才入库,预算耗尽即 Reject</h3>
+    <p class="body-p">
+      可执行性由表示本身保证:EWR 必须能 <code>CompileEWR</code> 成仿真器参数并被 MuJoCo 执行出轨迹,执行 + 渲染天然筛掉不合法假设。
+      在此之上,文本线 verifier 评语义与物理约束(实体、空间关系、事件、预期结局是否被仿真轨迹满足);
+      视频线在关键帧上联合比较 RGB、深度、mask、轨迹。<strong>只有「能渲染且对源验证通过」的世界才保留</strong>。
+      值得一提的是,论文报告的效果指标(Visual Alignment、IoU、Traj-ADE 等)是独立于验证信号的指标,避免自评自夸。
+    </p>
+
+    <h3>5.3 产出形态</h3>
+    <ul>
+      <li><strong>EWR 本体</strong>:scene.json + 仿真状态轨迹 τ(物体几何、相机参数、时间戳、时变物理状态,显式记录接触/碰撞/事件结果)+ 同步渲染视频 + sim-to-real 视频。轨迹可直接查询、干预、验证。</li>
+      <li><strong>World-Space VQA(下游训练数据 D_text / D_video)</strong>:从验证过的 EWR 直接生成定量问答——采样目标物体、时间戳、物理量(size/displacement/velocity/acceleration)、世界单位,可选提供一个已知世界空间值作为尺度先验;答案直接从同一 EWR 读出(size 读场景几何,运动学量从状态轨迹算);仅当目标物体、时间范围、参考量在该观测中有效才保留,得到 (V, q, y)。两条线同一格式,合并成统一 world-level 训练数据。</li>
+      <li><strong>Image-Space 数据(D_pix,配套)</strong>:73,335 条像素级 QA——46,763 条来自 GOT-10K(20,858 speed、8,399 velocity、12,169 acceleration、3,995 grounding、1,342 size),26,572 条来自 RefCOCO/RefCOCO+/RefCOCOg/RefCLEF(16,989 grounding、9,583 size)。已剔除与评测数据重叠的图像;运动量用中心差分公式计算(论文 Eq.2),每段视频统一采样 16 帧。</li>
+      <li><strong>RL 训练信号</strong>:GRPO,reward = r_num + λ_u·r_unit + λ_f·r_fmt,其中 r_num = exp(−|ŷ−y|/(|y|+ε))——尺度归一的数值精度 + 单位正确 + 格式正确。</li>
+    </ul>
+
+    <h3>5.4 规模与成本</h3>
+    <p class="body-p">
+      最终 World-Space 可执行世界数据集 = <strong>1,585 条 text-driven + 988 条 video-driven VQA 样本</strong>(附录 A.2;
+      注意这是 VQA 样本数,底层独立世界数文中没有单独给出)。训练侧已知算力信息:8 张 NVIDIA H100(4B/9B 直答版两阶段课程);
+      27B reasoning 版 GRPO 配置为每 prompt 16 rollouts、全局 batch 16、AdamW lr 5e-6、weight decay 0.01、5 步 warmup、bf16、
+      medium-effort thinking、无 KL 惩罚;推理评估在 step 60,temperature 1.0、top-p 0.95、最大响应 6144 token。
+    </p>
+    <div class="warn">
+      <strong>⚠️ 成本是黑箱。</strong>论文完全没有给出数据生产的吞吐、单价、token 成本数字;
+      中间各环节(LLM 生成多少文本种子、WISA-80K 筛后剩多少视频、accept/reject 率)也均未披露。
+      发现闭环每样本最多 K=5 轮 propose→sim→render→verify,除此之外的成本/时延/拒绝率一律未知——评估这套 pipeline 的「scalable」成色时,这一点必须记在账上。
+    </div>
+
+    <!-- ========== 6. 实验 ========== -->
+    <h2 id="sec-exp">6 · 实验:闭环本身有效,下游做到 SOTA</h2>
+
+    <h3>6.1 Discovery loop 的两轮迭代曲线</h3>
+    <p class="body-p">
+      视频驱动世界重建,K=5;指标为 Visual Alignment(silhouette/depth/RGB 加权 0.60/0.25/0.15)、Object IoU、Traj-ADE(%D)、
+      Velocity-ADE(%D/step)、Accuracy@2%D。<strong>Animation engine(主文,图 5)</strong>:从 one-shot(round 1)到 round 5 各曲线持续改善
+      (按图中坐标轴大致范围:Visual Alignment ~0.54→~0.62,Object IoU ~0.30→~0.46,Traj-ADE ~4.5→~1.5 %D,
+      Velocity-ADE ~0.48→~0.45,Accuracy@2%D ~45→~75%);匹配 5 次评估预算下,agentic loop 在 Visual Alignment、Object IoU、
+      Traj-ADE、Accuracy@2%D 上优于 Best-of-5(Velocity-ADE 图注只说「most aspects」,未逐项声称)。
+      <strong>Physics engine(附录 C.2,图 11)</strong>:同样 5 轮单调改善(VA ~0.54→0.60,IoU ~0.38→0.42,Traj-ADE ~29→26,
+      Vel-ADE ~26.2→25.4,Acc@2%D ~40→48),第 5 轮在<strong>全部 5 个指标</strong>上超过同预算 Best-of-5——迭代增益不依赖特定执行引擎。
+    </p>
+
+    <h3>6.2 QuantiPhy 主表:9B 直答超过 Gemini-3.1-Flash</h3>
+    <p class="body-p">
+      Benchmark 是 QuantiPhy validation(开源,<strong>159 条</strong>带可见 GT 的定量 QA;子集 2S/2D/3S/3D:数字 = 平面 2D vs 深度感知 3D 设置,
+      字母 = 源先验是静态量还是动态量),指标 MRA(10 档相对误差阈值 {0.1,…,0.9,0.95} 的均值,×100 报告)。
+    </p>
+    <table class="tbl">
+      <tr><th>模型</th><th>规模</th><th>2S</th><th>2D</th><th>3S</th><th>3D</th><th>Avg MRA</th></tr>
+      <tr><td>Gemini-3.1 Flash(最强 proprietary)</td><td>–</td><td>49.4</td><td>47.5</td><td>61.4</td><td>61.1</td><td>54.8</td></tr>
+      <tr><td>ChatGPT-5.1</td><td>–</td><td>56.9</td><td>34.6</td><td>45.6</td><td>56.4</td><td>48.4</td></tr>
+      <tr><td>Gemini-2.5 Pro</td><td>–</td><td>45.9</td><td>38.6</td><td>40.7</td><td>60.2</td><td>46.4</td></tr>
+      <tr><td>Qwen3-VL-32B-Instruct(最强开源 baseline)</td><td>32B</td><td>38.1</td><td>39.7</td><td>39.8</td><td>43.0</td><td>40.2</td></tr>
+      <tr><td><strong>Code-as-World-VL-4B</strong></td><td>4B</td><td>45.4</td><td>55.4</td><td>45.8</td><td>56.0</td><td class="r1">50.6</td></tr>
+      <tr><td><strong>Code-as-World-VL-9B</strong></td><td>9B</td><td>55.0</td><td>52.9</td><td>55.6</td><td>58.1</td><td class="r1">55.4</td></tr>
+      <tr><td><strong>Code-as-World-VL-27B(Reasoning)</strong></td><td>27B</td><td>48.7</td><td>62.4</td><td>60.5</td><td>62.8</td><td class="r1">58.6</td></tr>
+    </table>
+    <p class="tbl-src">数据来源:论文 Section 5.4,Table 1(QuantiPhy validation,MRA×100)。</p>
+    <div class="chart">
+      <div class="chart-t">QuantiPhy validation · Average MRA 横向对比</div>
+      <div class="bar-row"><span class="bar-label me">Code-as-World-VL-27B</span><div class="bar-track"><div class="bar-fill me" style="width:97.7%"></div></div><span class="bar-val me">58.6</span></div>
+      <div class="bar-row"><span class="bar-label me">Code-as-World-VL-9B</span><div class="bar-track"><div class="bar-fill me" style="width:92.3%"></div></div><span class="bar-val me">55.4</span></div>
+      <div class="bar-row"><span class="bar-label">Gemini-3.1 Flash</span><div class="bar-track"><div class="bar-fill" style="width:91.3%"></div></div><span class="bar-val">54.8</span></div>
+      <div class="bar-row"><span class="bar-label me">Code-as-World-VL-4B</span><div class="bar-track"><div class="bar-fill me" style="width:84.3%"></div></div><span class="bar-val me">50.6</span></div>
+      <div class="bar-row"><span class="bar-label">ChatGPT-5.1</span><div class="bar-track"><div class="bar-fill" style="width:80.7%"></div></div><span class="bar-val">48.4</span></div>
+      <div class="bar-row"><span class="bar-label">Gemini-2.5 Pro</span><div class="bar-track"><div class="bar-fill" style="width:77.3%"></div></div><span class="bar-val">46.4</span></div>
+      <div class="bar-row"><span class="bar-label">Qwen3-VL-32B-Instruct</span><div class="bar-track"><div class="bar-fill" style="width:67.0%"></div></div><span class="bar-val">40.2</span></div>
+      <div class="chart-note">柱长按 MRA/60 归一。4B 已大幅超过所有开源 baseline 并接近顶级闭源;9B 是直答(direct-answer)模型里的全场最佳;27B reasoning 版再进一步到 58.6,超过所有被评模型。</div>
+    </div>
+    <p class="body-p">
+      作者自己声明:<strong>27B 同时改了规模和响应协议</strong>,所以只作为「框架可扩展到更大 reasoning 模型」的证据,
+      不是 reasoning 单独贡献的受控估计。Image-Space 测量(附录 C.3,Table 3)也值得一提:9B 完整模型在 RefCOCO 68.3 / RefCOCOg 65.6 /
+      RefCOCO+ 66.4 / RefCLEF 61.9 / GOT-10K 26.6,全面超过 Qwen3-VL-32B 等;且 World-Space 阶段训练后五个 Image-Space benchmark 全部进一步提升,两阶段互相增益。
+    </p>
+
+    <h3>6.3 数据源消融:text 线与 video 线互补</h3>
+    <table class="tbl">
+      <tr><th>模型</th><th>仅 D_pix</th><th>D_pix + D_text</th><th>D_pix + D_video</th><th>全量</th></tr>
+      <tr><td>Code-as-World-VL-4B</td><td>44.2</td><td>48.5</td><td>47.8</td><td class="r1">50.6</td></tr>
+      <tr><td>Code-as-World-VL-9B</td><td>50.9</td><td>52.5</td><td>53.1</td><td class="r1">55.4</td></tr>
+    </table>
+    <p class="tbl-src">数据来源:论文附录 C.4,Table 4(QuantiPhy Avg MRA)。结论:精确仿真监督(text-driven)与真实视频外观/运动分布对齐(video-driven)互补。</p>
+
+    <h3>6.4 Sim-to-real 保真度:提外观,不动物理</h3>
+    <p class="body-p">
+      text-driven 世界经视频生成模型重渲染后,分布真实感大幅提升而运动保真几乎不变(附录 C.1,Table 2):
+    </p>
+    <table class="tbl">
+      <tr><th>Video Type</th><th>JEDi MMD ↓</th><th>TRAJAN Fréchet ↓</th><th>Traj-ADE ↓(%D)</th><th>Velocity-ADE ↓(%D/step)</th><th>Accuracy@2%D ↑(%)</th></tr>
+      <tr><td>Simulator Render</td><td>3.000</td><td>406.872</td><td>1.682</td><td>0.404</td><td>78.81</td></tr>
+      <tr><td>Sim-to-Real Video</td><td class="r1">1.484</td><td class="r1">185.321</td><td>1.677</td><td>0.472</td><td>77.49</td></tr>
+    </table>
+    <p class="body-p">
+      即重渲染把视频拉近真实分布(JEDi 3.000→1.484,TRAJAN 406.9→185.3),而 CoTracker 追踪对仿真 GT 轨迹的误差基本不变——
+      「提升外观而不改变 EWR 规定的物理演化」,标签可靠性不受损。
+    </p>
+    <div class="warn">
+      <strong>📝 小花絮:附录有一处笔误。</strong>正文 C.4 末尾写「full 9B model improves from 50.9 to <strong>56.8</strong>」,
+      与 Table 4 的 <strong>55.4</strong> 不一致,应为论文笔误——引用时请以表格数字为准。
+    </div>
+
+    <!-- ========== 7. 局限 ========== -->
+    <h2 id="sec-limits">7 · 局限与冷思考</h2>
+    <div class="think">
+      <h4>文中承认的</h4>
+      <ul>
+        <li><strong>仿真器表达能力上限</strong>(4.4):真实世界太复杂,即使简单刚体运动也对地形、接触几何、材料等潜在因素敏感;当真实过程超出仿真器建模范围,闭环可能收敛到「局部合理但机制错误」的 EWR。</li>
+        <li><strong>QuantiPhy 覆盖面窄</strong>(5.5):只评单目尺度标定下的 size/displacement/velocity/acceleration,运动设置相对受控;不含相机运动、旋转、形变、遮挡、流体、长时多物体动力学等。</li>
+        <li><strong>模型没有内化 discovery 过程</strong>(5.5):Code-as-World-VL 学的是验证后的结果监督,假设构建、仿真、诊断、迭代修订仍在模型外部。</li>
+      </ul>
+      <h4>我读出的(文中未明说)</h4>
+      <ul>
+        <li><strong>规模非常小</strong>:world-level 数据只有 1,585 + 988 条 VQA,却支撑了 +6~12 MRA 的 RL 增益——效率高,但「scalable supervision」的 scalable 只论证了原理,没有展示 10×/100× 规模曲线。</li>
+        <li><strong>成本黑箱</strong>:discovery agent 的基座 LLM、agent 框架、每世界平均轮次/token 成本、accept rate 全部未披露,rejection 机制的质量-产量 tradeoff 无法评估。</li>
+        <li><strong>人工环节不轻</strong>:文本种子要人工审核,视频筛选最后一步也是人工复核——「agentic discovery」的上游仍是 human-in-the-loop,全自动化的可行性未验证。</li>
+        <li><strong>领域偏窄</strong>:当前实现主要是刚体动力学,示例全是球、多米诺、坡道、碰撞;流体/布料/断裂只在 7.1 作为展望。动画引擎(运动学拟合)版本的「物理正确性」其实弱于 physics engine——主文展示的恰好是 animation engine。</li>
+        <li><strong>评测自指风险</strong>:Visual Alignment 等指标依赖 SAM3/VGGT 等模型产出的「观测 GT」,验证信号和评测指标部分同源(虽然作者声明评测指标不在验证信号里)。</li>
+        <li><strong>27B 非受控 + 校对不严</strong>:27B reasoning 只评了 step 60 单次验证,未给训练曲线;C.4 的 50.9→56.8 笔误提示内部校对不严。</li>
+      </ul>
+    </div>
+
+    <!-- ========== 8. 可复现性与启示 ========== -->
+    <h2 id="sec-repro">8 · 可复现性清单与对我们的启示</h2>
+    <p class="sec-intro">如果想复刻它的数据生产过程,按「source / 生成角色 / 验证 / 产出格式」四段拆:</p>
+    <div class="repro">
+      <div>
+        <h4>① Source 需要什么</h4>
+        <ul>
+          <li>文本线:LLM 批量生成刚体运动/碰撞/滚动类短场景描述 + 人工审核;描述需含可识别的实体、空间关系、物理事件、预期结局。</li>
+          <li>视频线:带元数据的物理视频池(论文用 WISA-80K)+ 运动聚焦过滤 pipeline(元数据筛 → 自动剔除 → 人工复核)。</li>
+          <li>感知前处理:实例分割+追踪(SAM3)、深度+相机几何(VGGT-Omega)、单目 3D 物体重建(SAM3D)。</li>
+        </ul>
+      </div>
+      <div>
+        <h4>② 生成角色需要什么</h4>
+        <ul>
+          <li>一个足够强的 LLM/VLM agent(论文未具名),身兼 evidence adapter、proposer(ModifyEWR)、verifier(CompareAndDiagnose + Accept)。</li>
+          <li>一套 EWR schema(scene.json)+ simulation SDK:把语义级场景编译成 MuJoCo MJCF 并做数值拟合——「agent 不直接写数值参数」这层工程是复现的关键工作量。</li>
+          <li>MuJoCo + 双引擎(animation/physics 同一接口);渲染与投影能力(RGB/深度/mask/图像平面轨迹)+ 关键帧选择器。</li>
+          <li>可选:视频生成模型做 sim-to-real 重渲染(Wan2.2-VACE + 内部模型;自建可用开源 T2V 编辑模型替代)。</li>
+        </ul>
+      </div>
+      <div>
+        <h4>③ 验证需要什么</h4>
+        <ul>
+          <li>闭环预算与拒绝制:K=5 轮;Accept 才入库,预算耗尽 Reject。</li>
+          <li>文本线验语义与物理约束;视频线在关键帧上联合比 RGB + 深度 + mask + 轨迹,帧级差异聚合成结构化 Δ。</li>
+          <li>独立效果指标(不参与验证信号):Visual Alignment(0.60/0.25/0.15 加权)、Object IoU、Traj-ADE、Velocity-ADE、Accuracy@2%D(轨迹用 CoTracker 估计,16 帧、宽度 512 归一化);真实感监控用 JEDi 与 TRAJAN。</li>
+          <li>与 Best-of-N 的同预算对照,确认闭环确实比独立采样划算。</li>
+        </ul>
+      </div>
+      <div>
+        <h4>④ 产出格式是什么</h4>
+        <ul>
+          <li>每个被接受的世界:EWR(scene.json + 编译后的仿真器参数)+ 完整状态轨迹 τ + 同步渲染视频 + 可选 sim-to-real 视频 + 发现过程 trace z。</li>
+          <li>World-Space VQA 三元组 (V, q, y):q 含目标物体、时间戳、物理量、输出单位、可选参考量先验;y 直接从 EWR 读出/算出;仅保留有效样本。论文规模参考:1,585 text-driven + 988 video-driven。</li>
+          <li>配套 Image-Space 像素级 QA(可选但有互补增益):RefCOCO 系 bbox + GOT-10K track 派生,中心差分算 v/a,73,335 条。</li>
+        </ul>
+      </div>
+    </div>
+    <p class="body-p">
+      <strong>复现缺口提醒</strong>:discovery agent 的基座模型与框架、文本种子的生成 prompt、accept/reject 比率、各环节成本、
+      底层独立世界数量(而非 VQA 条数)均未披露,复刻时需自行补齐,或从官方 repo 确认是否开源。
+    </p>
+    <div class="note">
+      <strong>💡 对我们的启示:</strong>这套 propose–execute–verify 的闭环,和我们自己的 agentic 造题 pipeline
+      (code_evolve / chartography_hack_code:参考图 → 复刻代码 → 终审)是<strong>同构</strong>的——
+      差别在他们把「可执行性」从图表渲染升级到了物理仿真:我们的 verifier 比的是渲染图与参考图的相似度,
+      他们的 verifier 比的是仿真轨迹与观测证据(RGB/深度/mask/轨迹)的一致性。拒绝闸门、结构化差异反馈 Δ、
+      同预算优于 Best-of-N 这些设计,都可以直接平移。
+    </div>
+
+    <!-- ========== 9. 参考资料 ========== -->
+    <h2 id="sec-refs">9 · 参考资料</h2>
+    <ol class="refs">
+      <li>MirroS 官方博客:<a href="https://mirros.ai/blog/representing-physical-world" target="_blank" rel="noopener">Representing the Physical World(mirros.ai/blog/representing-physical-world)</a></li>
+      <li>代码仓库:<a href="https://github.com/mirros-lab/code-as-world" target="_blank" rel="noopener">github.com/mirros-lab/code-as-world</a></li>
+      <li>本文全部数字与论断整理自《Code as Worlds: Agentic Discovery of Executable World Representations for Physical Reasoning》(MirroS Technical Report,2026-08-27)的论文笔记;迭代曲线数值为按论文图中坐标轴读取的大致范围,引用请以原文为准。</li>
+    </ol>
+
+    <a class="back" href="/#research">← 返回 Research 目录</a>
+  </article>
+</div>
+
+<footer class="footer">
+  <p>© 2026 Caesar-s1mple · 本文整理自公开资料,数据以各官方渠道为准 · 如有勘误欢迎到 <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">GitHub 仓库</a> 提 issue</p>
+  <p class="egg">站点自检:1 + 1 = 2 ✓ 一切正常</p>
+</footer>
+
+<script>
+/* ================= 目录 + scrollspy ================= */
+const TOC_ITEMS = [
+  { id: "sec-overview",   t: "1 · 总览:世界即代码", l1: true },
+  { id: "sec-motivation", t: "2 · 动机:现象 vs 机制", l1: true },
+  { id: "sec-ewr",        t: "3 · EWR 表示:(C, E, A)", l1: true },
+  { id: "sec-loop",       t: "4 · Agentic discovery 闭环", l1: true },
+  { id: "sec-data",       t: "5 · 数据侧", l1: true },
+  { id: "sec-exp",        t: "6 · 实验", l1: true },
+  { id: "sec-limits",     t: "7 · 局限与冷思考", l1: true },
+  { id: "sec-repro",      t: "8 · 可复现性与启示", l1: true },
+  { id: "sec-refs",       t: "9 · 参考资料", l1: true }
+];
+document.getElementById("toc").innerHTML =
+  `<div class="toc-title">目录</div>` +
+  TOC_ITEMS.map(i => `<a href="#${i.id}" class="${i.l1 ? "l1" : "l2"}" data-toc="${i.id}">${i.t}</a>`).join("");
+document.getElementById("toc-mobile").innerHTML =
+  TOC_ITEMS.map(i => `<a href="#${i.id}" style="${i.l1 ? "font-weight:600" : "padding-left:16px"}">${i.t}</a>`).join("");
+
+const tocLinks = {};
+document.querySelectorAll("[data-toc]").forEach(a => tocLinks[a.dataset.toc] = a);
+const spy = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      Object.values(tocLinks).forEach(a => a.classList.remove("on"));
+      const link = tocLinks[e.target.id];
+      if (link) { link.classList.add("on"); link.scrollIntoView({ block: "nearest" }); }
+    }
+  });
+}, { rootMargin: "-70px 0px -65% 0px" });
+TOC_ITEMS.forEach(i => { const el = document.getElementById(i.id); if (el) spy.observe(el); });
+</script>
+</body>
+</html>
