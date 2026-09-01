@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuantiPhy:让 VLM 看着视频报数值,这个基准什么来头? · Caesar-s1mple</title>
+<meta name="description" content="拆解 QuantiPhy:斯坦福 Fei-Fei Li / Ehsan Adeli 团队的定量物理推理基准(CVPR 2026)——三路视频来源、单先验标定、MRA 指标、官方榜单与 Code as Worlds 自报 SOTA 的对照,附 RefCOCO 系与 GOT-10K 的 Image-Space 改造用法。">
+<!-- 首页卡片元数据:供 tools/sync_index.py 生成首页条目,标题取本文 h1 标签,摘要取上面 description -->
+<meta name="card:date" content="2026-09-01">
+<meta name="card:read" content="约 15 分钟阅读">
+<meta name="card:tags" content="Benchmark 调研|物理推理">
+<meta name="card:cover-sub" content="斯坦福 CVPR'26 · 定量物理评测">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  /* ---------- 文章头 ---------- */
+  .article-head { padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+  .crumb { font-size: 0.84rem; color: var(--faint); margin-bottom: 22px; }
+  .crumb a { color: var(--muted); }
+  .article-head h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.2; letter-spacing: -0.3px;
+    margin: 12px 0 16px; max-width: 780px;
+  }
+  .article-sub { color: var(--muted); font-size: 1.02rem; max-width: 720px; }
+  .article-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; font-size: 0.85rem; color: var(--faint); align-items: center; }
+  .pill {
+    font-size: 0.72rem; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .pill.green { background: rgba(13,148,136,.1); color: var(--teal); }
+  .abstract {
+    margin-top: 28px; max-width: 760px;
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 18px 22px;
+    font-size: 0.92rem; color: var(--muted);
+  }
+  .abstract strong { color: var(--ink); }
+
+  /* ---------- 双栏布局 ---------- */
+  .layout {
+    display: grid; grid-template-columns: 250px minmax(0, 780px);
+    gap: 56px; justify-content: center; padding-top: 48px;
+  }
+
+  /* ---------- 目录 ---------- */
+  .toc { position: sticky; top: 86px; align-self: start; max-height: calc(100vh - 110px); overflow-y: auto; padding-right: 8px; }
+  .toc-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; color: var(--faint); text-transform: uppercase; margin-bottom: 14px; }
+  .toc a { display: block; color: var(--muted); font-size: 0.85rem; padding: 4px 0 4px 14px; border-left: 2px solid var(--line); line-height: 1.45; }
+  .toc a:hover { color: var(--ink); text-decoration: none; }
+  .toc a.l1 { font-weight: 600; color: var(--ink); margin-top: 12px; }
+  .toc a.l2 { color: var(--muted); }
+  .toc a.on { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .toc-details { display: none; }
+
+  /* ---------- 章节 ---------- */
+  .art h2 {
+    font-family: var(--serif); font-size: 1.75rem; font-weight: 600;
+    margin: 72px 0 8px; padding-top: 20px; scroll-margin-top: 76px;
+  }
+  .art h2:first-of-type { margin-top: 0; }
+  .sec-intro { color: var(--muted); font-size: 0.95rem; margin-bottom: 30px; max-width: 700px; }
+  .art p.body-p { margin: 14px 0; font-size: 0.95rem; }
+  .art p.body-p strong { color: var(--ink); }
+
+  /* ---------- 总览 ---------- */
+  .statband { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 26px 0; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 16px; text-align: center;
+  }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--accent); }
+  .stat span { font-size: 0.78rem; color: var(--muted); }
+  .warn {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+    padding: 16px 20px; font-size: 0.88rem; color: #92400e; margin: 24px 0;
+  }
+  .warn strong { color: #78350f; }
+
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 20px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table.tbl th { text-align: left; font-size: 0.74rem; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #fcfbfa; }
+  table.tbl td { padding: 9px 14px; border-bottom: 1px solid #f1efe9; }
+  table.tbl tr:last-child td { border-bottom: none; }
+  table.tbl tr:hover td { background: #fafaf7; }
+  table.tbl td.r1 { font-weight: 700; color: var(--accent); }
+  .tbl-src { font-size: 0.78rem; color: var(--faint); margin-top: -10px; margin-bottom: 20px; }
+
+  /* ---------- 条形图 ---------- */
+  .chart { background: #fcfbfa; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
+  .chart-t { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.8rem; }
+  .bar-label { width: 150px; text-align: right; color: var(--muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.me { color: var(--accent); font-weight: 700; }
+  .bar-track { flex: 1; height: 16px; background: #f0eee8; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; background: #c7cdd8; min-width: 2px; }
+  .bar-fill.me { background: linear-gradient(90deg, var(--accent), var(--teal)); }
+  .bar-val { width: 56px; flex-shrink: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .bar-val.me { color: var(--ink); font-weight: 700; }
+  .chart-note { font-size: 0.76rem; color: var(--faint); margin-top: 10px; }
+
+  /* ---------- 思考 / 参考 ---------- */
+  .think { margin: 14px 0; }
+  .think h4 { font-family: var(--serif); font-size: 1.08rem; font-weight: 600; margin: 26px 0 6px; }
+  .think p { font-size: 0.93rem; color: #3a4354; }
+  .refs { font-size: 0.86rem; color: var(--muted); }
+  .refs li { margin-bottom: 8px; }
+  .back { display: inline-block; margin-top: 56px; font-size: 0.9rem; font-weight: 600; }
+
+  /* ---------- 本文特定 ---------- */
+  .art h3 { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; margin: 30px 0 6px; }
+  .art ul, .art ol { margin: 10px 0 16px 22px; font-size: 0.93rem; color: #3a4354; }
+  .art ul li, .art ol li { margin-bottom: 7px; line-height: 1.7; }
+  .art code { font-family: var(--mono); font-size: 0.82em; background: #f1efe9; border-radius: 5px; padding: 1px 6px; }
+
+  .ceagrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
+  .ceagrid > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .ceagrid b.t { display: block; font-family: var(--serif); font-size: 1.02rem; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .ceagrid p { font-size: 0.87rem; color: #3a4354; line-height: 1.65; }
+
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 20px 0; }
+  .facts > div { background: #fcfbfa; padding: 12px 16px; }
+  .facts dt { font-size: 0.72rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); font-weight: 600; margin-bottom: 3px; }
+  .facts dd { font-size: 0.86rem; line-height: 1.55; }
+
+  .sample {
+    background: #f7f6f2; border: 1px solid var(--line); border-left: 3px solid var(--teal);
+    border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 14px 0;
+  }
+  .sample .s-t { font-size: 0.8rem; font-weight: 700; color: var(--teal); margin-bottom: 5px; }
+  .sample .s-q { font-size: 0.86rem; color: #3a4354; font-family: var(--mono); line-height: 1.65; }
+  .sample .s-src { font-size: 0.76rem; color: var(--faint); margin-top: 7px; }
+  .sample .s-e {
+    font-size: 0.86rem; color: var(--ink); margin-top: 9px;
+    background: rgba(13,148,136,.07); border-radius: 8px; padding: 8px 12px; line-height: 1.65;
+  }
+  .sample .s-e::before { content: "💡 白话解读:"; font-weight: 700; color: var(--teal); font-size: 0.78rem; margin-right: 4px; }
+  .sample .s-src a { color: var(--faint); text-decoration: underline; }
+
+  .note {
+    background: rgba(13,148,136,.06); border: 1px solid rgba(13,148,136,.28); border-radius: 12px;
+    padding: 16px 20px; font-size: 0.9rem; color: #115e59; margin: 24px 0; line-height: 1.7;
+  }
+  .note strong { color: #0f766e; }
+
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .toc { display: none; }
+    .toc-details { display: block; position: sticky; top: 58px; z-index: 40; background: rgba(250,249,246,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 0; margin-bottom: 10px; }
+    .toc-details summary { font-size: 0.88rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+    .toc-details a { display: block; padding: 5px 0; font-size: 0.85rem; color: var(--muted); }
+    .statband { grid-template-columns: repeat(2, 1fr); }
+    .ceagrid { grid-template-columns: 1fr; }
+    .facts { grid-template-columns: 1fr; }
+    .bar-label { width: 104px; font-size: 0.74rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/">Caesar<em>-s1mple</em></a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/#research" class="here">Research</a>
+      <a href="/#projects">Projects</a>
+      <a href="/#blog">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<header class="article-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">首页</a> / <a href="/#research">Research</a> / QuantiPhy 基准解读</div>
+    <div class="kicker">Benchmark 深度调研</div>
+    <h1>QuantiPhy:让 VLM 看着视频报数值,这个基准什么来头?</h1>
+    <p class="article-sub">
+      斯坦福 Fei-Fei Li / Ehsan Adeli 团队的定量物理推理基准(CVPR 2026)——三路视频来源、单一物理先验标定、
+      MRA 指标、官方榜单与 Code as Worlds 自报 SOTA 的对照,附 RefCOCO 系与 GOT-10K 的 Image-Space 改造用法。
+    </p>
+    <div class="article-meta">
+      <span class="pill">Benchmark 调研</span>
+      <span class="pill green">物理推理</span>
+      <span>📅 2026-09-01</span>
+      <span>⏱ 约 15 分钟</span>
+      <span>📄 QuantiPhy(CVPR 2026)· arXiv 2512.19526</span>
+    </div>
+    <div class="abstract">
+      <strong>摘要:</strong>QuantiPhy(<em>A Quantitative Benchmark Evaluating Physical Reasoning Abilities of
+      Vision-Language Models</em>)是首个要求 VLM 从视频中输出<strong>带真实单位的连续数值</strong>(尺寸/位移/速度/加速度)
+      的物理推理基准:3.3K+ 开放式数值题、568 个 2-3 秒视频,每题只给一个物理先验,考察的是「像素 → 世界」的标定与测量能力。
+      它出自斯坦福大学 Puyin Li、Tiange Xiang(共同一作)与 Fei-Fei Li、Ehsan Adeli(共同末作)团队,
+      2025-12-22 挂上 arXiv,CVPR 2026 接收,目前正在办 NeurIPS 2026 竞赛。
+      它也是 <a href="/research/code-as-worlds/">Code as Worlds</a> 的主评测——本文按「谁提出的、测什么、怎么测、谁排第一」的顺序拆解,
+      并把 Code as Worlds 自报的 SOTA 放进官方榜单口径里对照。
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <!-- 目录(桌面) -->
+  <aside class="toc" id="toc"></aside>
+
+  <article class="art">
+    <!-- 目录(移动端) -->
+    <details class="toc-details">
+      <summary>📑 本文目录</summary>
+      <div id="toc-mobile"></div>
+    </details>
+
+    <!-- ========== 1. 总览 ========== -->
+    <h2 id="sec-overview">1 · 总览:给「物理量感」打分</h2>
+    <p class="body-p">
+      既有的视频物理评测大多是定性的:选择题、是非判断、「球会往哪边滚」。QuantiPhy 换了一种问法——
+      <strong>不给选项,要求模型看着一段 2-3 秒的视频,直接报出物理量的数值和单位</strong>:这颗台球 1 秒时的速度是多少 cm/s?
+      那辆黑车的平均速度是多少 m/s?数值接近就给分,越精确分越高。
+      论文的核心发现颇具冲击力:<strong>当前 SOTA VLM 在很大程度上依赖预训练世界知识「背答案」,而不是忠实地使用视觉与文本输入</strong>——
+      把视频拿掉只给先验,成绩只小幅下降;把先验换成反事实的数,最强模型掉分超过 70%。
+    </p>
+    <div class="statband">
+      <div class="stat"><b>3,289 + 159</b><span>发布口径 QA(测试 + 验证)</span></div>
+      <div class="stat"><b>3 路</b><span>视频来源:仿真 / 实拍 / 网络</span></div>
+      <div class="stat"><b>10 档</b><span>MRA 相对误差阈值</span></div>
+      <div class="stat"><b>55.6</b><span>人类基线 MRA(全体集)</span></div>
+    </div>
+    <p class="body-p">
+      题目按两条正交的轴切成 2S/2D/3S/3D 四个子集(机制见第 4 节);评测分两个口径:
+      <strong>测试集(Whole Set)3,289 题、GT 长期不公开</strong>,以及 <strong>验证集(validation)159 题、GT 可见</strong>——
+      Code as Worlds 评的就是后者。指标沿用 VSI-Bench 的 MRA(Mean Relative Accuracy)。
+    </p>
+
+    <!-- ========== 2. 出身 ========== -->
+    <h2 id="sec-origin">2 · 出身:斯坦福团队,竞赛进行中</h2>
+    <dl class="facts">
+      <div><dt>论文</dt><dd>QuantiPhy: A Quantitative Benchmark Evaluating Physical Reasoning Abilities of Vision-Language Models</dd></div>
+      <div><dt>作者</dt><dd>Puyin Li*、Tiange Xiang*(共同一作)、Ella Mao、Shirley Wei、Xinye Chen、Adnan Masood、Fei-Fei Li†、Ehsan Adeli†(共同末作)</dd></div>
+      <div><dt>机构</dt><dd>斯坦福大学(+ UST)</dd></div>
+      <div><dt>发表</dt><dd>arXiv 2512.19526(2025-12-22)→ CVPR 2026 接收</dd></div>
+      <div><dt>开源资源</dt><dd>项目主页 quantiphy.stanford.edu、GitHub 评测代码、HuggingFace 测试/验证两份数据集</dd></div>
+      <div><dt>竞赛</dt><dd>NeurIPS 2026 Competition:Main / Open-Weight 双赛道,截止 2026-11-05 AOE,每日 ≤3 次计分提交,奖金 $1,000 / $500 / $250;<strong>测试集 GT 赛后也不公开</strong></dd></div>
+    </dl>
+    <p class="body-p">
+      在相关工作版图里,QuantiPhy 的差异化很清晰:<strong>PhysBench</strong> 是大规模定性物理 VQA(选择题为
+      主);<strong>VideoPhy / Physics-IQ</strong> 评的是视频<em>生成</em>模型的物理常识;<strong>VSI-Bench</strong> 测视频空间
+      智能(MRA 指标即沿用自它);<strong>BLINK</strong> 是通用视觉感知合集。QuantiPhy 是第一个把「从视频读出物理量数值」
+      本身作为评测对象的基准。2026 年的诊断类工作《Ill-Posed by Design》(arXiv 2606.24335)把它列为
+      「诊断精神上最接近」的先行工作。
+    </p>
+
+    <!-- ========== 3. 数据 ========== -->
+    <h2 id="sec-data">3 · 数据:视频从哪来,题怎么注</h2>
+    <p class="sec-intro">568 个视频(多数 2-3 秒)来自三条互补的管线,另用 SAM 分割叠加纯色背景的「去噪」变体把数据量翻倍。</p>
+    <div class="ceagrid">
+      <div>
+        <b class="t">Blender 仿真</b>
+        <p>程序化生成刚体运动场景,GT 精确、可做反事实控制;尺度横跨微观到天文,专治「模型只会背日常尺度」。</p>
+      </div>
+      <div>
+        <b class="t">实验室实拍</b>
+        <p>多目立体相机 + 深度相机做 4D 重建,拍自由落体、斜面滑动、单摆、弹跳等经典力学场景,GT 来自重建而非人标。</p>
+      </div>
+      <div>
+        <b class="t">互联网视频</b>
+        <p>单目实拍(公路、台球等),用画面里的已知尺寸参照物(标准硬币、车道宽)作尺度先验,最贴近真实分布。</p>
+      </div>
+    </div>
+    <p class="body-p">
+      每题是一个三元组 <code>(video, question + prior, numerical GT)</code>:问题里嵌着<strong>恰好一个物理先验</strong>
+      (如「台球直径 57.2 mm」「重力加速度 9.8 m/s²」),3D 题额外附深度先验(如「t=0s 时船到相机 11.827 m」)。
+      物理量覆盖 size / displacement / velocity / acceleration;像素空间的量经标量 γ 映射到世界单位
+      ([pixel]→[m]、[pixel/s]→[m/s]、[pixel/s²]→[m/s²])。注意:<strong>只研究平移运动,不含旋转</strong>;
+      相机固定;场景是孤立刚体运动,无复杂多体交互。
+    </p>
+    <div class="warn">
+      <strong>⚠️ 口径小坑。</strong>论文正文写 3,355 QA / 569 视频,而实际公开发布是测试集 3,289 QA / 568 视频 + 验证集 159 QA
+      (应为发布前重新清洗所致)。引用时建议用发布口径,并注明是 Whole Set 还是 validation——两个口径的榜单是分开的。
+    </div>
+
+    <!-- ========== 4. 机制 ========== -->
+    <h2 id="sec-mech">4 · 机制:单先验标定 + 开放式作答 + MRA</h2>
+    <h3>4.1 2S/2D/3S/3D:两条正交的轴</h3>
+    <table class="tbl">
+      <tr><th>子集</th><th>运动维度</th><th>先验类型</th><th>含义</th></tr>
+      <tr><td><strong>2S</strong></td><td>2D(物体严格在 x-y 平面运动)</td><td>Static</td><td>给一个恒定静态量(如物体尺寸)作标定锚点</td></tr>
+      <tr><td><strong>2D</strong></td><td>2D</td><td>Dynamic</td><td>给某时刻的动态量(该时刻的速度或加速度)</td></tr>
+      <tr><td><strong>3S</strong></td><td>3D(含 z 轴深度变化,更难)</td><td>Static + 深度先验</td><td>静态锚点之外附相机距离等深度注释</td></tr>
+      <tr><td><strong>3D</strong></td><td>3D</td><td>Dynamic + 深度先验</td><td>动态先验 + 深度注释,四类中综合最难</td></tr>
+    </table>
+    <p class="tbl-src">来源:论文 §3.1 footnote 3 与竞赛页;GitHub 评测器列名为 S2/D2/S3/D3,是同一四类的字母前置写法。另有一条仅作分析用的第三轴:场景难度(单/多运动物体 × 纯色/简单纹理/复杂背景)。</p>
+    <p class="body-p">
+      设计动机:物理量的「像素 → 世界」换算必须有锚点,而单目视频本身不带尺度——<strong>给且只给一个先验</strong>,
+      既让题目有唯一可解的标定路径,又能精确测试模型会不会用这个先验(而不是背一个常识数)。
+    </p>
+    <h3>4.2 开放式数值作答,无选择题</h3>
+    <p class="body-p">
+      输入是视频 + prompt(含先验与「analyze the video and calculate the answer carefully」),
+      输出被约束为「<strong>only the numerical answer and unit</strong>」。官网明确:全部任务开放式、不做 multiple-choice,
+      以防选项排除法等 shortcut。官方推理协议 temperature 0–0.1;OpenAI 模型上限 10,000 token,开源模型 500–2,048。
+      每题最多重试 5 次解析数值,解析失败计 0 分。
+    </p>
+    <h3>4.3 MRA:给「差不多对」部分分</h3>
+    <p class="body-p">
+      对连续含噪的物理量,精确匹配太脆、单阈值 pass/fail 太武断。MRA 的做法是取 10 档渐严的相对误差阈值
+      <code>C = {0.1, 0.2, …, 0.9, 0.95}</code>,计算 <code>MRA = (1/10) · Σ_θ 𝟙(|ŷ−y| / |y| &lt; 1−θ)</code>:
+      θ 越大容差越严(θ=0.95 即误差 &lt;5% 才给分),命中几档拿几分。最终成绩是四个子集 MRA 的<strong>无权宏平均</strong>,
+      ×100 报告。指标沿用自 VSI-Bench。
+    </p>
+
+    <!-- ========== 5. 样例 ========== -->
+    <h2 id="sec-samples">5 · 真实数据样例:题到底长什么样</h2>
+    <p class="sec-intro">以下样例引自 HuggingFace QuantiPhy-validation 数据卡与官网互动 demo,先验与答案均为原始标注。</p>
+
+    <div class="sample">
+      <div class="s-t">样例 ① · 互联网实拍台球(internet_0027,2S 类)</div>
+      <div class="s-q">先验:billiard ball diameter = 57.2 mm<br>
+        Q: What is the velocity of the orange ball at 1.00s in cm/s?<br>
+        GT: <strong>24.99 cm/s</strong></div>
+      <div class="s-e">台球直径是国际标准值(57.2 mm),等于把一把「世界尺子」递到画面里:模型要量出橙球每秒移动多少个「球径」,再乘 5.72 cm 换算。同视频还有「白球 1-2s 平均速度 26.82 cm/s」「黄球 2s 加速度 11 cm/s²」等题——一个视频挂多道 QA。</div>
+      <div class="s-src">来源:<a href="https://huggingface.co/datasets/PaulineLi/QuantiPhy-validation" target="_blank" rel="noopener">HF QuantiPhy-validation</a>(官网互动 demo 同题,先验写作 57.4 mm)</div>
+    </div>
+
+    <div class="sample">
+      <div class="s-t">样例 ② · 公路黑车(internet_0001,互联网实拍)</div>
+      <div class="s-q">先验:lane width = 3.66 m(美国标准车道宽)<br>
+        Q: What is the average speed of the black car in m/s?<br>
+        GT: <strong>29.3 m/s</strong>(同视频另有:车长 5.81 m、车宽 2.21 m)</div>
+      <div class="s-e">用车道宽当标尺,再数黑车几秒跨过几条车道。29.3 m/s ≈ 105 km/h,符合高速公路直觉——模型如果只背「车速一般 30 m/s 左右」也能蒙对附近档位,这正是第 8 节「prior-only 消融」要拷问的地方。</div>
+      <div class="s-src">来源:<a href="https://huggingface.co/datasets/PaulineLi/QuantiPhy-validation" target="_blank" rel="noopener">HF QuantiPhy-validation</a></div>
+    </div>
+
+    <div class="sample">
+      <div class="s-t">样例 ③ · 仿真保龄球(simulation_0163)</div>
+      <div class="s-q">先验:diameter of the ball = 0.21 m<br>
+        Q: What is the speed of the ball at time 0.5s in m/s?<br>
+        GT: <strong>3.148 m/s</strong>(同刻加速度 GT 0.359 m/s²)</div>
+      <div class="s-e">仿真场景的 GT 来自物理引擎精确状态,三位小数照报——MRA 的 10 档容差就是为这种「原理上有无限精度、视觉估计必有噪声」的题设计的:误差 &lt;5% 拿满档,&lt;90% 也有保底分。</div>
+      <div class="s-src">来源:<a href="https://huggingface.co/datasets/PaulineLi/QuantiPhy-validation" target="_blank" rel="noopener">HF QuantiPhy-validation</a></div>
+    </div>
+
+    <div class="sample">
+      <div class="s-t">样例 ④ · 3D 小船(simulation_0009,3D 类)</div>
+      <div class="s-q">先验:speed of the boat = 1.5 m/s,附深度注释(t=0s 时船-相机距离 11.827 m 等)<br>
+        Q: What is the length of the boat in meters?<br>
+        GT: <strong>3.62 m</strong></div>
+      <div class="s-e">3D 类题给了动态量却问静态尺寸:船在纵深方向上动,透视缩放让「同样一米在远近两端不一样长」,必须联合深度注释做几何换算——这是四类题里对视觉测量要求最高的一种。</div>
+      <div class="s-src">来源:<a href="https://huggingface.co/datasets/PaulineLi/QuantiPhy-validation" target="_blank" rel="noopener">HF QuantiPhy-validation</a></div>
+    </div>
+
+    <!-- ========== 6. 榜单 ========== -->
+    <h2 id="sec-board">6 · 榜单:官方口径 vs Code as Worlds 自报</h2>
+    <h3>6.1 官方 Whole Set(3,289 题,GT 不公开)</h3>
+    <table class="tbl">
+      <tr><th>模型</th><th>Avg MRA</th><th>备注</th></tr>
+      <tr><td>人类基线(18 视频小样本)</td><td class="r1">55.6</td><td>2S/2D/3S/3D = 50.0 / 59.1 / 55.2 / 57.9</td></tr>
+      <tr><td>ChatGPT-5.1(官方第一)</td><td>53.1</td><td>46.3 / 56.2 / 51.5 / 58.3,唯一过 50 的模型</td></tr>
+      <tr><td>Gemini-2.5 Pro</td><td>49.6</td><td>–</td></tr>
+      <tr><td>Gemini-2.5 Flash</td><td>48.6</td><td>–</td></tr>
+      <tr><td>Qwen3-VL-Instruct-32B(最佳开源)</td><td>46.0</td><td>–</td></tr>
+      <tr><td>Grok 4.1</td><td>45.0</td><td>–</td></tr>
+      <tr><td>ChatGPT-5</td><td>32.6</td><td>–</td></tr>
+      <tr><td>Claude Sonnet 4.5</td><td>22.8</td><td>–</td></tr>
+    </table>
+    <p class="tbl-src">来源:QuantiPhy 论文与官网榜单(Whole Set tab,MRA×100)。</p>
+
+    <h3>6.2 官方 validation(159 题,GT 可见)</h3>
+    <table class="tbl">
+      <tr><th>模型</th><th>2S</th><th>2D</th><th>3S</th><th>3D</th><th>Avg MRA</th></tr>
+      <tr><td>ChatGPT-5.1</td><td>56.9</td><td>34.6</td><td>45.6</td><td>56.4</td><td class="r1">48.4</td></tr>
+      <tr><td>Gemini-2.5 Pro</td><td>45.9</td><td>38.6</td><td>40.7</td><td>60.2</td><td>46.4</td></tr>
+      <tr><td>Gemini-2.5 Flash</td><td>–</td><td>–</td><td>–</td><td>–</td><td>44.1</td></tr>
+      <tr><td>Qwen3-VL-32B-Instruct</td><td>38.1</td><td>39.7</td><td>39.8</td><td>43.0</td><td>40.2</td></tr>
+      <tr><td>Grok 4.1</td><td>–</td><td>–</td><td>–</td><td>–</td><td>36.8</td></tr>
+      <tr><td>ChatGPT-5</td><td>–</td><td>–</td><td>–</td><td>–</td><td>32.6</td></tr>
+      <tr><td>Claude Sonnet 4.5</td><td>–</td><td>–</td><td>–</td><td>–</td><td>25.1</td></tr>
+      <tr><td>ChatGPT-5 Pro</td><td>–</td><td>–</td><td>–</td><td>–</td><td>19.5</td></tr>
+    </table>
+    <p class="tbl-src">来源:quantiphy.stanford.edu 榜单(Validation Set tab,MRA×100)。ChatGPT-5 Pro(19.5)反常地远低于 ChatGPT-5(32.6),官方未作解释。</p>
+
+    <h3>6.3 Code as Worlds 自报口径(同为 validation 159 题)</h3>
+    <table class="tbl">
+      <tr><th>模型</th><th>2S</th><th>2D</th><th>3S</th><th>3D</th><th>Avg MRA</th></tr>
+      <tr><td>Gemini-3.1 Flash(CaW 论文自测)</td><td>49.4</td><td>47.5</td><td>61.4</td><td>61.1</td><td>54.8</td></tr>
+      <tr><td>Code-as-World-VL-4B</td><td>45.4</td><td>55.4</td><td>45.8</td><td>56.0</td><td>50.6</td></tr>
+      <tr><td>Code-as-World-VL-9B(直答最佳)</td><td>55.0</td><td>52.9</td><td>55.6</td><td>58.1</td><td class="r1">55.4</td></tr>
+      <tr><td>Code-as-World-VL-27B(Reasoning)</td><td>48.7</td><td>62.4</td><td>60.5</td><td>62.8</td><td class="r1">58.6</td></tr>
+    </table>
+    <p class="tbl-src">来源:Code as Worlds 论文(arXiv 2608.27549)Table 1。Gemini-3.1 Flash 的数字是该论文自行评测,<strong>不在 QuantiPhy 官网榜单上</strong>;CaW 三个模型成绩同样为自报,尚未进入官方榜单/竞赛。</p>
+    <div class="chart">
+      <div class="chart-t">QuantiPhy validation · Avg MRA 全景(带 * 为 Code as Worlds 论文自测/自报)</div>
+      <div class="bar-row"><span class="bar-label me">CaW-VL-27B *</span><div class="bar-track"><div class="bar-fill me" style="width:97.7%"></div></div><span class="bar-val me">58.6</span></div>
+      <div class="bar-row"><span class="bar-label me">CaW-VL-9B *</span><div class="bar-track"><div class="bar-fill me" style="width:92.3%"></div></div><span class="bar-val me">55.4</span></div>
+      <div class="bar-row"><span class="bar-label">Gemini-3.1 Flash *</span><div class="bar-track"><div class="bar-fill" style="width:91.3%"></div></div><span class="bar-val">54.8</span></div>
+      <div class="bar-row"><span class="bar-label me">CaW-VL-4B *</span><div class="bar-track"><div class="bar-fill me" style="width:84.3%"></div></div><span class="bar-val me">50.6</span></div>
+      <div class="bar-row"><span class="bar-label">ChatGPT-5.1</span><div class="bar-track"><div class="bar-fill" style="width:80.7%"></div></div><span class="bar-val">48.4</span></div>
+      <div class="bar-row"><span class="bar-label">Gemini-2.5 Pro</span><div class="bar-track"><div class="bar-fill" style="width:77.3%"></div></div><span class="bar-val">46.4</span></div>
+      <div class="bar-row"><span class="bar-label">Gemini-2.5 Flash</span><div class="bar-track"><div class="bar-fill" style="width:73.5%"></div></div><span class="bar-val">44.1</span></div>
+      <div class="bar-row"><span class="bar-label">Qwen3-VL-32B</span><div class="bar-track"><div class="bar-fill" style="width:67.0%"></div></div><span class="bar-val">40.2</span></div>
+      <div class="bar-row"><span class="bar-label">ChatGPT-5</span><div class="bar-track"><div class="bar-fill" style="width:54.3%"></div></div><span class="bar-val">32.6</span></div>
+      <div class="bar-row"><span class="bar-label">Claude Sonnet 4.5</span><div class="bar-track"><div class="bar-fill" style="width:41.8%"></div></div><span class="bar-val">25.1</span></div>
+      <div class="bar-row"><span class="bar-label">ChatGPT-5 Pro</span><div class="bar-track"><div class="bar-fill" style="width:32.5%"></div></div><span class="bar-val">19.5</span></div>
+      <div class="chart-note">柱长按 MRA/60 归一。官方 validation 口径的第一仍是 ChatGPT-5.1(48.4);Code as Worlds 论文引用的 ChatGPT-5.1 / Gemini-2.5 Pro / Qwen3-VL-32B 三个数字与官网逐位一致,其自报的 27B(58.6)与自测的 Gemini-3.1 Flash(54.8)尚待官方竞赛(截止 2026-11-05)或第三方复现确认。</div>
+    </div>
+
+    <!-- ========== 7. 副章 ========== -->
+    <h2 id="sec-imagespace">7 · 副章:Image-Space 五件套</h2>
+    <p class="sec-intro">
+      除了 QuantiPhy(World-Space 主评),Code as Worlds 附录 C.3 还在五个经典像素级基准上做了「数值属性估计」评测——
+      这五个老家伙原本不是干这个的,被改造后才变成物理量估计的考场。
+    </p>
+    <table class="tbl">
+      <tr><th>基准</th><th>出处</th><th>规模</th><th>原本测什么</th><th>CaW 的改造</th></tr>
+      <tr>
+        <td><strong>RefCOCO</strong></td>
+        <td>UNC · ECCV 2016(arXiv 1608.00272)</td>
+        <td>19,994 图 · 50,000 物体 · 142,209 条表达式(均长 3.61 词)</td>
+        <td>指代表达式理解(REC),IoU@0.5;ReferItGame 双人游戏收集,短促、爱用位置词</td>
+        <td rowspan="4">借表达式 + GT 框,问被指物体的宽 / 高 / 对角线长度(像素)</td>
+      </tr>
+      <tr>
+        <td><strong>RefCOCO+</strong></td>
+        <td>同上(同一篇)</td>
+        <td>141,564 条表达式(均长 3.53 词)</td>
+        <td>收集时设「taboo words」禁用位置词 → 聚焦外观属性</td>
+      </tr>
+      <tr>
+        <td><strong>RefCOCOg</strong></td>
+        <td>UCLA / Google · CVPR 2016(arXiv 1511.02283)</td>
+        <td>26,711 图 · 54,822 物体 · 104,560 条表达式(均长 8.43 词)</td>
+        <td>AMT 非交互式收集(写描述 + 他人点击验证),长句、更像完整描述</td>
+      </tr>
+      <tr>
+        <td><strong>RefCLEF</strong></td>
+        <td>UNC · EMNLP 2014(ReferItGame 原作,ACL D14-1086)</td>
+        <td>约 2 万张 IAPR TC-12 图 · 130,525 条表达式 · 96,654 物体</td>
+        <td>REC 的始祖数据集;唯一不基于 MS-COCO,图像偏场景/背景元素</td>
+      </tr>
+      <tr>
+        <td><strong>GOT-10K</strong></td>
+        <td>中科院自动化所 · TPAMI 2021(arXiv 1810.11981)</td>
+        <td>&gt;10,000 段视频 · &gt;150 万标注框 · 563 类 · 87 种运动模式</td>
+        <td>通用单目标跟踪,AO / SR 指标;one-shot 协议(train/test 类别零重叠)</td>
+        <td>借逐帧轨迹,每段均匀采 16 帧,中心差分算位移 / 速度 / 加速度(像素单位)</td>
+      </tr>
+    </table>
+    <p class="tbl-src">规模数字分别核自各原始论文与 lichengunc/refer API;GOT-10K 以 TPAMI 版为准(官网特性栏的 test 段数口径与之不同)。</p>
+    <p class="body-p">
+      改造后的评测指标同样是 MRA(论文 Eq.15,10 档相对误差阈值,grounding 输出单独解析、不计入数值分)。
+      配套训练侧是 73,335 条 Image-Space QA(GOT-10K 派生 46,763 + 四个指称数据集派生 26,572,已剔除与评测重叠图像)。
+      结果方面,论文 Table 3 报告 9B 完整模型 RefCOCO 68.3 / RefCOCO+ 66.4 / RefCOCOg 65.6 / RefCLEF 61.9 / GOT-10K 26.6,
+      全面超过 Qwen3-VL-32B,且 World-Space 阶段训练后五项全部进一步提升——<strong>arXiv HTML 版抽不出表格单元格,
+      这组数字我未能从论文文本独立核实,引用请以 PDF 原表为准</strong>。
+      另外值得一提:把 RefCOCO / GOT-10K 当「数值估计」考场目前几乎是 Code as Worlds 独有的用法,
+      社区对它们的常规用法仍是 grounding(IoU@0.5)与 tracking(AO/SR)。
+    </p>
+
+    <!-- ========== 8. 冷思考 ========== -->
+    <h2 id="sec-think">8 · 冷思考</h2>
+    <div class="think">
+      <h4>官方数据自己暴露的</h4>
+      <ul>
+        <li><strong>prior-only 警示</strong>:把视频拿掉、只给先验文本,模型成绩只小幅下降——高分里有多少是「测量」来的、多少是「背常识」来的,本身存疑。这是论文最核心的发现,也是给使用者的明确提醒。</li>
+        <li><strong>反事实先验掉 70%+</strong>:把先验乘以系数 α 改成「错的世界」,最强模型 MRA 暴跌 70% 以上——说明模型并不忠实于给定先验,而是被预训练里的物理常识锚住。用 QuantiPhy 报成绩,理应同时报这两组消融,否则数字的说服力要打折。</li>
+        <li><strong>覆盖面边界(官方自述)</strong>:只测平移、固定相机、孤立刚体运动,不含旋转、形变、流体、遮挡、长时多体交互。Code as Worlds §5.5 对它的批评(「不含相机运动、旋转、形变、遮挡、流体、长时多物体动力学」)与此一致。</li>
+      </ul>
+      <h4>我读出的(使用时的注意点)</h4>
+      <ul>
+        <li><strong>SOTA 宣称要分口径</strong>:官方 validation 第一仍是 ChatGPT-5.1(48.4);Code as Worlds 的 58.6 是自报 + 自测 Gemini-3.1 Flash,且 27B 用了 reasoning 协议、与直答模型非完全同条件。这类「论文自报 SOTA vs 官方榜」的张力,要等 NeurIPS 竞赛(截止 2026-11-05)或第三方复现来裁决。</li>
+        <li><strong>159 题的方差</strong>:validation 只有 159 条 QA,四类宏平均意味着少数题的得失就能挪动总分——比较两个接近的分数时,样本量要记在心里。</li>
+        <li><strong>口径坑不少</strong>:论文 3,355 vs 发布 3,289+159;人类基线 55.6 在两个 tab 里是同一行(18 视频小样本);官方榜上 ChatGPT-5 Pro(19.5)低于 ChatGPT-5(32.6)且无解释——引用前务必核对口径。</li>
+        <li><strong>「定量」是把双刃剑</strong>:数值答案让评分客观、可排序,但也把物理推理压扁成了「一个数」——过程对不对(单位换算路径、参照系选择)评分看不到,诊断类工作(如《Ill-Posed by Design》)正是在补这一层。</li>
+      </ul>
+    </div>
+
+    <!-- ========== 9. 参考资料 ========== -->
+    <h2 id="sec-refs">9 · 参考资料</h2>
+    <ol class="refs">
+      <li>论文:<a href="https://arxiv.org/abs/2512.19526" target="_blank" rel="noopener">QuantiPhy: A Quantitative Benchmark Evaluating Physical Reasoning Abilities of Vision-Language Models(arXiv 2512.19526,CVPR 2026)</a></li>
+      <li>项目主页与榜单:<a href="https://quantiphy.stanford.edu/" target="_blank" rel="noopener">quantiphy.stanford.edu</a> · <a href="https://quantiphy.stanford.edu/competition/" target="_blank" rel="noopener">NeurIPS 2026 Competition 页</a></li>
+      <li>代码与数据:<a href="https://github.com/Paulineli/QuantiPhy" target="_blank" rel="noopener">github.com/Paulineli/QuantiPhy</a> · <a href="https://huggingface.co/datasets/PaulineLi/QuantiPhy" target="_blank" rel="noopener">HF QuantiPhy(测试集)</a> · <a href="https://huggingface.co/datasets/PaulineLi/QuantiPhy-validation" target="_blank" rel="noopener">HF QuantiPhy-validation(159 题,本文样例来源)</a></li>
+      <li>Code as Worlds 论文:<a href="https://arxiv.org/abs/2608.27549" target="_blank" rel="noopener">arXiv 2608.27549(自测 Gemini-3.1 Flash 与 CaW-VL 成绩的出处)</a>;本站解读:<a href="/research/code-as-worlds/">Code as Worlds:把物理世界变成可执行代码</a></li>
+      <li>副章基准出处:RefCOCO / RefCOCO+(<a href="https://arxiv.org/abs/1608.00272" target="_blank" rel="noopener">arXiv 1608.00272</a>)· RefCOCOg(<a href="https://arxiv.org/abs/1511.02283" target="_blank" rel="noopener">arXiv 1511.02283</a>)· RefCLEF / ReferItGame(<a href="https://aclanthology.org/D14-1086/" target="_blank" rel="noopener">ACL D14-1086</a>)· GOT-10K(<a href="https://arxiv.org/abs/1810.11981" target="_blank" rel="noopener">arXiv 1810.11981</a>)· <a href="https://github.com/lichengunc/refer" target="_blank" rel="noopener">refer API</a></li>
+      <li>本文数字以各官方渠道为准;榜单为 2026-09-01 时点的快照,竞赛进行期间排名可能变化。</li>
+    </ol>
+
+    <a class="back" href="/#research">← 返回 Research 目录</a>
+  </article>
+</div>
+
+<footer class="footer">
+  <p>© 2026 Caesar-s1mple · 本文整理自公开资料,数据以各官方渠道为准 · 如有勘误欢迎到 <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">GitHub 仓库</a> 提 issue</p>
+  <p class="egg">站点自检:1 + 1 = 2 ✓ 一切正常</p>
+</footer>
+
+<script>
+/* ================= 目录 + scrollspy ================= */
+const TOC_ITEMS = [
+  { id: "sec-overview",   t: "1 · 总览:给物理量感打分", l1: true },
+  { id: "sec-origin",     t: "2 · 出身:斯坦福团队", l1: true },
+  { id: "sec-data",       t: "3 · 数据:视频与标注", l1: true },
+  { id: "sec-mech",       t: "4 · 机制:先验与 MRA", l1: true },
+  { id: "sec-samples",    t: "5 · 真实数据样例", l1: true },
+  { id: "sec-board",      t: "6 · 榜单:官方 vs 自报", l1: true },
+  { id: "sec-imagespace", t: "7 · 副章:Image-Space 五件套", l1: true },
+  { id: "sec-think",      t: "8 · 冷思考", l1: true },
+  { id: "sec-refs",       t: "9 · 参考资料", l1: true }
+];
+document.getElementById("toc").innerHTML =
+  `<div class="toc-title">目录</div>` +
+  TOC_ITEMS.map(i => `<a href="#${i.id}" class="${i.l1 ? "l1" : "l2"}" data-toc="${i.id}">${i.t}</a>`).join("");
+document.getElementById("toc-mobile").innerHTML =
+  TOC_ITEMS.map(i => `<a href="#${i.id}" style="${i.l1 ? "font-weight:600" : "padding-left:16px"}">${i.t}</a>`).join("");
+
+const tocLinks = {};
+document.querySelectorAll("[data-toc]").forEach(a => tocLinks[a.dataset.toc] = a);
+const spy = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      Object.values(tocLinks).forEach(a => a.classList.remove("on"));
+      const link = tocLinks[e.target.id];
+      if (link) { link.classList.add("on"); link.scrollIntoView({ block: "nearest" }); }
+    }
+  });
+}, { rootMargin: "-70px 0px -65% 0px" });
+TOC_ITEMS.forEach(i => { const el = document.getElementById(i.id); if (el) spy.observe(el); });
+</script>
+</body>
+</html>

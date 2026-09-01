@@ -191,7 +191,7 @@
       与 <a href="https://github.com/mirros-lab/code-as-world" target="_blank" rel="noopener">代码仓库</a>。
       核心主张一句话:把物理世界表示为<strong>可执行代码</strong>(Executable World Representation, EWR = 物理组成 + 动态演化 + 视觉外观),
       用一个 agentic 闭环从文本或真实视频中「溯因式」地自动发现这种表示,再把验证过的可执行世界当作
-      <strong>可规模化、数值精确的物理监督信号</strong>训练 VLM——在定量物理推理基准 QuantiPhy 上,
+      <strong>可规模化、数值精确的物理监督信号</strong>训练 VLM——在定量物理推理基准 <a href="/research/quantiphy/">QuantiPhy</a> 上,
       9B 直答模型超过 Gemini-3.1-Flash,27B 推理版以 58.6 MRA 拿到全场最高。
     </div>
   </div>
@@ -436,8 +436,9 @@
 
     <h3>6.2 QuantiPhy 主表:9B 直答超过 Gemini-3.1-Flash</h3>
     <p class="body-p">
-      Benchmark 是 QuantiPhy validation(开源,<strong>159 条</strong>带可见 GT 的定量 QA;子集 2S/2D/3S/3D:数字 = 平面 2D vs 深度感知 3D 设置,
+      Benchmark 是 <a href="/research/quantiphy/">QuantiPhy</a> validation(开源,<strong>159 条</strong>带可见 GT 的定量 QA;子集 2S/2D/3S/3D:数字 = 平面 2D vs 深度感知 3D 设置,
       字母 = 源先验是静态量还是动态量),指标 MRA(10 档相对误差阈值 {0.1,…,0.9,0.95} 的均值,×100 报告)。
+      这个基准的提出者、数据构造、机制细节与官方榜单,见本站另一篇:<a href="/research/quantiphy/">QuantiPhy 深度拆解</a>。
     </p>
     <table class="tbl">
       <tr><th>模型</th><th>规模</th><th>2S</th><th>2D</th><th>3S</th><th>3D</th><th>Avg MRA</th></tr>
@@ -575,6 +576,7 @@
       <li>MirroS 官方博客:<a href="https://mirros.ai/blog/representing-physical-world" target="_blank" rel="noopener">Representing the Physical World(mirros.ai/blog/representing-physical-world)</a></li>
       <li>代码仓库:<a href="https://github.com/mirros-lab/code-as-world" target="_blank" rel="noopener">github.com/mirros-lab/code-as-world</a></li>
       <li>本文全部数字与论断整理自《Code as Worlds: Agentic Discovery of Executable World Representations for Physical Reasoning》(MirroS Technical Report,2026-08-27)的论文笔记;迭代曲线数值为按论文图中坐标轴读取的大致范围,引用请以原文为准。</li>
+      <li>延伸阅读:本站对主评测基准的拆解——<a href="/research/quantiphy/">QuantiPhy:让 VLM 看着视频报数值,这个基准什么来头?</a>(提出者、数据构造、MRA 机制、官方榜单与本文成绩口径的对照)。</li>
     </ol>
 
     <a class="back" href="/#research">← 返回 Research 目录</a>
