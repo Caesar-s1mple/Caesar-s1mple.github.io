@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocateAnything:把每个框当原子块,一次前向并行解出 · Caesar-s1mple</title>
+<meta name="description" content="深度解读 NVIDIA LocateAnything(ECCV 2026):把边界框视为定长原子块的并行块解码 PBD——MoonViT + Qwen2.5-3B 骨干、NTP/MTP 联合训练、Hybrid 回退、138M 查询数据引擎;12.7 BPS 吞吐 2.5× Rex-Omni,LVIS 高 IoU 精度大幅领先。">
+<!-- 首页卡片元数据:供 tools/sync_index.py 生成首页条目,标题取本文 h1 标签,摘要取上面 description -->
+<meta name="card:date" content="2026-09-03">
+<meta name="card:read" content="约 15 分钟阅读">
+<meta name="card:tags" content="论文解读|Vision Grounding">
+<meta name="card:cover-sub" content="NVIDIA · ECCV 2026 · Parallel Box Decoding">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  /* ---------- 文章头 ---------- */
+  .article-head { padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+  .crumb { font-size: 0.84rem; color: var(--faint); margin-bottom: 22px; }
+  .crumb a { color: var(--muted); }
+  .article-head h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.2; letter-spacing: -0.3px;
+    margin: 12px 0 16px; max-width: 780px;
+  }
+  .article-sub { color: var(--muted); font-size: 1.02rem; max-width: 720px; }
+  .article-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; font-size: 0.85rem; color: var(--faint); align-items: center; }
+  .pill {
+    font-size: 0.72rem; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .pill.green { background: rgba(13,148,136,.1); color: var(--teal); }
+  .abstract {
+    margin-top: 28px; max-width: 760px;
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 18px 22px;
+    font-size: 0.92rem; color: var(--muted);
+  }
+  .abstract strong { color: var(--ink); }
+
+  /* ---------- 双栏布局 ---------- */
+  .layout {
+    display: grid; grid-template-columns: 250px minmax(0, 780px);
+    gap: 56px; justify-content: center; padding-top: 48px;
+  }
+
+  /* ---------- 目录 ---------- */
+  .toc { position: sticky; top: 86px; align-self: start; max-height: calc(100vh - 110px); overflow-y: auto; padding-right: 8px; }
+  .toc-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; color: var(--faint); text-transform: uppercase; margin-bottom: 14px; }
+  .toc a { display: block; color: var(--muted); font-size: 0.85rem; padding: 4px 0 4px 14px; border-left: 2px solid var(--line); line-height: 1.45; }
+  .toc a:hover { color: var(--ink); text-decoration: none; }
+  .toc a.l1 { font-weight: 600; color: var(--ink); margin-top: 12px; }
+  .toc a.l2 { color: var(--muted); }
+  .toc a.on { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .toc-details { display: none; }
+
+  /* ---------- 章节 ---------- */
+  .art h2 {
+    font-family: var(--serif); font-size: 1.75rem; font-weight: 600;
+    margin: 72px 0 8px; padding-top: 20px; scroll-margin-top: 76px;
+  }
+  .art h2:first-of-type { margin-top: 0; }
+  .sec-intro { color: var(--muted); font-size: 0.95rem; margin-bottom: 30px; max-width: 700px; }
+  .fig { margin: 26px 0; }
+  .fig img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .fig figcaption { margin-top: 10px; font-size: 0.82rem; color: var(--faint); line-height: 1.55; }
+  .fig figcaption b { color: var(--muted); }
+  .art p.body-p { margin: 14px 0; font-size: 0.95rem; }
+  .art p.body-p strong { color: var(--ink); }
+
+  /* ---------- 总览 ---------- */
+  .statband { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 26px 0; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 16px; text-align: center;
+  }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--accent); }
+  .stat span { font-size: 0.78rem; color: var(--muted); }
+  .warn {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+    padding: 16px 20px; font-size: 0.88rem; color: #92400e; margin: 24px 0;
+  }
+  .warn strong { color: #78350f; }
+
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 20px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table.tbl th { text-align: left; font-size: 0.74rem; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #fcfbfa; }
+  table.tbl td { padding: 9px 14px; border-bottom: 1px solid #f1efe9; }
+  table.tbl tr:last-child td { border-bottom: none; }
+  table.tbl tr:hover td { background: #fafaf7; }
+  table.tbl td.r1 { font-weight: 700; color: var(--accent); }
+  .tbl-src { font-size: 0.78rem; color: var(--faint); margin-top: -10px; margin-bottom: 20px; }
+
+  /* ---------- 条形图 ---------- */
+  .chart { background: #fcfbfa; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
+  .chart-t { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.8rem; }
+  .bar-label { width: 150px; text-align: right; color: var(--muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.me { color: var(--accent); font-weight: 700; }
+  .bar-track { flex: 1; height: 16px; background: #f0eee8; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; background: #c7cdd8; min-width: 2px; }
+  .bar-fill.me { background: linear-gradient(90deg, var(--accent), var(--teal)); }
+  .bar-val { width: 56px; flex-shrink: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .bar-val.me { color: var(--ink); font-weight: 700; }
+  .chart-note { font-size: 0.76rem; color: var(--faint); margin-top: 10px; }
+
+  /* ---------- 思考 / 参考 ---------- */
+  .think { margin: 14px 0; }
+  .think h4 { font-family: var(--serif); font-size: 1.08rem; font-weight: 600; margin: 26px 0 6px; }
+  .think p { font-size: 0.93rem; color: #3a4354; }
+  .refs { font-size: 0.86rem; color: var(--muted); }
+  .refs li { margin-bottom: 8px; }
+  .back { display: inline-block; margin-top: 56px; font-size: 0.9rem; font-weight: 600; }
+
+  /* ---------- 本文特定 ---------- */
+  .art h3 { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; margin: 30px 0 6px; }
+  .art ul, .art ol { margin: 10px 0 16px 22px; font-size: 0.93rem; color: #3a4354; }
+  .art ul li, .art ol li { margin-bottom: 7px; line-height: 1.7; }
+  .art code { font-family: var(--mono); font-size: 0.82em; background: #f1efe9; border-radius: 5px; padding: 1px 6px; }
+
+  .ceagrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
+  .ceagrid > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .ceagrid b.t { display: block; font-family: var(--serif); font-size: 1.02rem; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .ceagrid p { font-size: 0.87rem; color: #3a4354; line-height: 1.65; }
+
+  .flow { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; margin: 20px 0; }
+  .fstep { flex: 1; min-width: 108px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .fstep b { display: block; font-size: 0.84rem; margin-bottom: 4px; }
+  .fstep span { font-size: 0.72rem; color: var(--faint); font-family: var(--mono); line-height: 1.5; display: block; }
+  .farrow { display: flex; align-items: center; color: var(--faint); font-size: 0.9rem; }
+
+  .note {
+    background: rgba(13,148,136,.06); border: 1px solid rgba(13,148,136,.28); border-radius: 12px;
+    padding: 16px 20px; font-size: 0.9rem; color: #115e59; margin: 24px 0; line-height: 1.7;
+  }
+  .note strong { color: #0f766e; }
+
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .toc { display: none; }
+    .toc-details { display: block; position: sticky; top: 58px; z-index: 40; background: rgba(250,249,246,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 0; margin-bottom: 10px; }
+    .toc-details summary { font-size: 0.88rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+    .toc-details a { display: block; padding: 5px 0; font-size: 0.85rem; color: var(--muted); }
+    .statband { grid-template-columns: repeat(2, 1fr); }
+    .ceagrid { grid-template-columns: 1fr; }
+    .bar-label { width: 104px; font-size: 0.74rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/">Caesar<em>-s1mple</em></a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/#research" class="here">Research</a>
+      <a href="/#projects">Projects</a>
+      <a href="/#blog">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<header class="article-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">首页</a> / <a href="/#research">Research</a> / LocateAnything 论文解读</div>
+    <div class="kicker">论文深度调研</div>
+    <h1>LocateAnything:把每个框当原子块,一次前向并行解出</h1>
+    <p class="article-sub">
+      NVIDIA 的统一视觉定位模型——Parallel Box Decoding 块化并行解码、NTP/MTP 联合训练、Hybrid 回退,
+      与 138M 条查询的数据引擎;一次全景拆解。
+    </p>
+    <div class="article-meta">
+      <span class="pill">Vision Grounding</span>
+      <span class="pill green">Parallel Decoding</span>
+      <span>📅 2026-09-03</span>
+      <span>⏱ 约 15 分钟</span>
+      <span>📄 NVIDIA · ECCV 2026(arXiv:2605.27365)</span>
+    </div>
+    <div class="abstract">
+      <strong>摘要:</strong>《LocateAnything: Fast and High-Quality Vision-Language Grounding with Parallel Box Decoding》
+      是 NVIDIA LPR 实验室(Eagle VLM 团队,通讯作者 Zhiding Yu;Lei Zhang 同时任教于香港理工大学)2026-05-26 挂出的技术报告,
+      官方口径已被 ECCV 2026 接收。核心主张一句话:VLM 做 grounding 时不该把框序列化成逐 token 蹦出的数字串——
+      把每个边界框/点视为<strong>定长原子块</strong>,单次前向并行解码整个坐标集(Parallel Box Decoding, PBD)。
+      结果是 3B 模型(MoonViT + Qwen2.5-3B)在 H100 上跑到 <strong>12.7 BPS(box/秒)</strong>,
+      10× Qwen3-VL、2.5× Rex-Omni,且 LVIS F1@IoU=0.95 从 Rex-Omni 的 20.7 拉到 <strong>31.1</strong>;
+      统一覆盖开放词表检测、密集检测、referring grounding、GUI grounding、OCR 定位、文档版面与点定位七类任务。
+      HF 权重发布一周下载破 10 万。骨干直接站在月之暗面 Kimi-VL 的 MoonViT 与阿里 Qwen2.5 肩上,本文一并拆解。
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <!-- 目录(桌面) -->
+  <aside class="toc" id="toc"></aside>
+
+  <article class="art">
+    <!-- 目录(移动端) -->
+    <details class="toc-details">
+      <summary>📑 本文目录</summary>
+      <div id="toc-mobile"></div>
+    </details>
+
+    <!-- ========== 1. 总览 ========== -->
+    <h2 id="sec-overview">1 · 总览:一次前向,框全出来</h2>
+    <p class="body-p">
+      生成式 VLM 做视觉定位的通行做法,是把坐标变成文本:要么写成数字(Textual Digits,如 Qwen-VL),
+      要么量化成离散 token(Quantized Tokens,如 Rex-Omni),然后让语言模型<strong>逐 token 自回归地蹦</strong>。
+      一张 300 个目标的密集场景图,意味着上千次串行解码步。LocateAnything 换了一种看法:
+      <strong>一个框本来就是 4 个坐标 + 2 个结构 token 的定长单元</strong>,为什么不一次前向把整个块解出来?
+      这就是 Parallel Box Decoding——块与块之间保持因果(半自回归),块内全部并行。
+    </p>
+    <div class="statband">
+      <div class="stat"><b>3B</b><span>MoonViT + Qwen2.5-3B</span></div>
+      <div class="stat"><b>12.7 BPS</b><span>10× Qwen3-VL · 2.5× Rex-Omni</span></div>
+      <div class="stat"><b>31.1</b><span>LVIS F1@0.95(Rex-Omni 20.7)</span></div>
+      <div class="stat"><b>138M+</b><span>训练查询 · 785M 标注框</span></div>
+    </div>
+    <figure class="fig">
+      <img src="/assets/img/locateanything-teaser.png" alt="LocateAnything teaser:统一任务覆盖与三种解码范式对比" loading="lazy">
+      <figcaption><b>论文 Figure 1</b>:上——LocateAnything 统一支持开放词表检测、密集检测、referring / phrase grounding、
+      GUI grounding、OCR 定位、文档版面与点定位;下——三种解码范式对比:逐位数字解码、量化坐标逐 token 解码,
+      以及本文的 PBD 块级并行解码(单次前向输出整个框)。</figcaption>
+    </figure>
+
+    <!-- ========== 2. 动机 ========== -->
+    <h2 id="sec-motivation">2 · 动机:串行解码与几何结构天生不匹配</h2>
+    <p class="sec-intro">论文的问题意识来自一个观察:框是二维几何对象,而 1D token 流不是。</p>
+    <p class="body-p">
+      把 2D 框压平成 1D token 序列有两个代价。其一是<strong>结构错配</strong>:一个框的四个坐标是强耦合的整体,
+      逐 token 解码把「当前在写哪个框的第几个坐标」这层状态完全交给模型自己维护,错误会沿序列累积。
+      其二是<strong>吞吐瓶颈</strong>:每框至少 4-6 个解码步,目标越多延迟越长——这正是密集检测、整页 OCR、
+      文档版面这类「框多」场景最疼的地方。
+    </p>
+    <p class="body-p">
+      那为什么不直接套用已有的通用加速方案?论文(§1, Fig. 2)明确指出:通用 MTP / 扩散式 LLM 的随机分块是
+      <strong>structure-agnostic</strong> 的——块边界可能切在一个框的中间、横跨两个物体、甚至横跨类别,
+      于是模型学到的是跨框、跨类别的<strong>虚假共现模式</strong>。LocateAnything 的主张因此非常干净:
+      <strong>并行化的块边界必须与几何单元的边界严格对齐</strong>——加速结构本身要懂任务的形状。
+    </p>
+
+    <!-- ========== 3. 方法 ========== -->
+    <h2 id="sec-method">3 · 方法:Parallel Box Decoding</h2>
+    <h3>3.1 块表示:定长 L=6 的原子块</h3>
+    <p class="body-p">
+      坐标归一化到 <code>[0,1000]</code> 量化。每个块定长 <strong>L=6</strong>:4 个坐标 token 加
+      <code>&lt;box&gt;</code>/<code>&lt;/box&gt;</code> 结构 token,空位填 <code>&lt;null&gt;</code>。
+      在此之上定义四种功能块:<strong>Semantic</strong>(语义标签,可跨多个块)、<strong>Box</strong>、
+      <strong>Negative</strong>(显式表示「目标不存在」,输出 <code>&lt;box&gt;none&lt;/box&gt;</code>)与
+      <strong>End</strong>(终止)。联合概率写成 P(B|Z,E)=∏ᵢ P(bᵢ|b&lt;ᵢ,Z,E)——<strong>半自回归</strong>:块内并行、块间因果。
+      骨干是原生分辨率 VLM:<strong>Moon-ViT(月之暗面 Kimi-VL 的 MoonViT-SO-400M,MIT 许可)+ MLP projector +
+      Qwen2.5-3B-Instruct</strong>,总参数 3B,属 NVIDIA Eagle VLM 家族。
+    </p>
+    <figure class="fig">
+      <img src="/assets/img/locateanything-arch.png" alt="LocateAnything 架构与块化输出表示" loading="lazy">
+      <figcaption><b>论文 Figure 3</b>:模型架构与块化输出表示——原生分辨率 MoonViT 编码图像,Qwen2.5-3B 以
+      定长 L=6 的 Semantic / Box / Negative / End 四类原子块组织输出;同一份标注同时以 token 级(NTP)与块级(MTP)两种格式参与训练。</figcaption>
+    </figure>
+    <h3>3.2 NTP + MTP 联合训练,三条掩码规则</h3>
+    <p class="body-p">
+      训练输入是拼接序列 <code>x_all = x_vis ⊕ x_q ⊕ x_ntp ⊕ x_blk</code>:同一份 ground truth 同时以
+      token 级(NTP)与块级(MTP)两种格式出现;MTP 块内保留首 token 作上下文、其余替换为 [mask]。
+      配套专用注意力掩码(Fig. 4)三条规则:<strong>① NTP 流纯因果且不可见 MTP 流</strong>(防信息泄漏、兼容 KV cache);
+      <strong>② 块间因果</strong>(学框与框的依赖,减少重复/漏检);<strong>③ 块内双向</strong>(学坐标间的几何依赖)。
+      损失 L = L_ntp + L_mtp;块长 = 1 时退化为标准 NTP。工程上训练用 MagiAttention 支持异构注意力掩码 + Stream Packing。
+    </p>
+    <figure class="fig">
+      <img src="/assets/img/locateanything-mask.png" alt="NTP–MTP 联合训练的注意力掩码设计" loading="lazy">
+      <figcaption><b>论文 Figure 4</b>:联合训练的注意力掩码——NTP 流因果且与 MTP 流隔离;MTP 侧块间因果、块内双向。
+      掩码设计同时决定了「不泄题」与「学得会几何依赖」。</figcaption>
+    </figure>
+    <h3>3.3 三种推理模式:Slow / Fast / Hybrid</h3>
+    <div class="flow">
+      <div class="fstep"><b>Slow</b><span>纯 NTP 逐 token 解码;最稳,精度上界,4.3 BPS</span></div>
+      <div class="farrow">·</div>
+      <div class="fstep"><b>Fast</b><span>纯 MTP 块并行;最快,15.3 BPS,但精度略掉</span></div>
+      <div class="farrow">·</div>
+      <div class="fstep"><b>Hybrid(默认)</b><span>MTP 出错则丢弃问题块、回退已验证前缀、NTP 重解码该块后切回;12.7 BPS</span></div>
+    </div>
+    <p class="body-p">
+      Hybrid 的歧义触发条件(论文逐字):top-1 坐标 token 概率 &lt; 0.7 <strong>且</strong> top-5 坐标 token
+      在 [0,1000] 空间的 max-min 差 &gt; 80;或检测到格式违规。它针对的是作者明示的两类并行解码失败模式:
+      <strong>Format Irregularity</strong>(类别边界处结构 token 与坐标 token 混杂,实例 <code>&lt;box&gt;&lt;211&gt;&lt;/ref&gt;&lt;911&gt;&lt;887&gt;&lt;/box&gt;</code>)
+      与 <strong>Spatial Ambiguity</strong>(网格状密集排列时输出两物体之间的中间坐标,IoU 骤降)。
+      推理侧还有纯 FlashAttention-varlen 的 <code>la_flash</code> 后端:A100 4K 图 batch=4 时 8.03 s / 11.71 GB 显存,
+      对比 SDPA 的 8.26 s / 35.12 GB。
+    </p>
+    <figure class="fig">
+      <img src="/assets/img/locateanything-hybrid.png" alt="Hybrid 回退机制:并行块出错时回退到 NTP 重解码" loading="lazy">
+      <figcaption><b>论文 Figure 5</b>:Hybrid 模式——MTP 并行解码遇歧义或格式违规时,丢弃问题块、回退到已验证前缀,
+      用 NTP 逐 token 重解码该块后切回并行模式。</figcaption>
+    </figure>
+
+    <!-- ========== 4. 数据与训练 ========== -->
+    <h2 id="sec-data">4 · 数据与训练:138M 条查询是怎么造出来的</h2>
+    <p class="sec-intro">方法只解决「怎么解码」,覆盖七类任务靠的是数据引擎——以及一条「先知识、后定位」的训练顺序。</p>
+    <h3>4.1 LocateAnything-Data</h3>
+    <p class="body-p">
+      总量:<strong>12M 唯一图像、138M+ 自然语言查询、785M 标注框、22M+ 负样本</strong>。任务构成(查询占比):
+      通用检测 <strong>66.9%</strong>(框占 83.1%)、GUI grounding 16.5%、referring 7.3%、OCR 3.6%、文档版面 3.5%、点定位 2.2%。
+      数据引擎(附录 B.2)按来源分两条线:
+    </p>
+    <ul>
+      <li><strong>有标注线</strong>(OpenImages、Objects365):把框类别交给 <strong>Qwen3-VL</strong> 生成属性/空间/推理式查询 → <strong>Molmo</strong> 预测候选点 → 只保留落在 GT 框内的点作监督。</li>
+      <li><strong>无标注线</strong>(Unsplash、SA-1B):Qwen3-VL 直接生成查询 → Molmo 打点 + <strong>SAM 3</strong> 转框,或 <strong>Rex-Omni</strong> 直接出框。</li>
+      <li><strong>统一质检</strong>:全部生成框经 Qwen3-VL post-checking 过滤不一致预测;GroundCUA 的短标签也由 Qwen3-VL 从 appearance / spatial / functional 三角度扩写。</li>
+    </ul>
+    <p class="body-p">
+      值得注意:整条数据引擎建立在 <strong>Qwen3-VL + Molmo + SAM 3 + Rex-Omni</strong> 上——标注质量的上限就是这组「教师」的上限,
+      而最终质检又闭环回到 Qwen3-VL,自评自洽的风险论文未讨论。
+    </p>
+    <h3>4.2 训练流程:先世界知识,后定位</h3>
+    <p class="body-p">
+      四阶段(附录 A,Table 7):先对 base VLM 做 <strong>world-knowledge alignment</strong>——完全排除检测/grounding 数据,
+      只用 caption/VQA/OCR 等保住通用能力;再三阶段 SFT:Stage-1 混入全量 138M 查询;Stage-2 把通用数据降至
+      <strong>20%</strong>、加权多目标密集数据(MOT20Det、SKU110K)。GPU 规模 64 → 256 张,lr 2e-4 → 1e-5,
+      序列长 32,768 / 25,600;总机时未披露。<strong>消融实验模型只在 COCO 上训练</strong>,以隔离 PBD 本身的贡献。
+      推理配置(附录 A):temperature 0.7、top-p 0.9、repetition penalty 1.1、block size 6、max_new_tokens 8192、BF16;
+      BPS 指标在单张 H100 上测量。
+    </p>
+
+    <!-- ========== 5. 实验 ========== -->
+    <h2 id="sec-exp">5 · 实验:快 2.5×,而且更准</h2>
+    <h3>5.1 主表:高 IoU 精度是最大亮点</h3>
+    <table class="tbl">
+      <tr><th>模型</th><th>LVIS 0.5 / 0.95 / Mean</th><th>COCO 0.5 / 0.95 / Mean</th></tr>
+      <tr><td><strong>LocateAnything-3B</strong></td><td>62.3 / <strong>31.1</strong> / <strong>50.7</strong></td><td>70.1 / <strong>19.3</strong> / <strong>54.7</strong></td></tr>
+      <tr><td>Rex-Omni-3B</td><td>64.3 / 20.7 / 46.9</td><td>72.0 / 15.9 / 52.9</td></tr>
+      <tr><td>Qwen3-VL-8B</td><td>61.5 / 20.2 / 44.8</td><td>–</td></tr>
+      <tr><td>Grounding DINO-Swin-T(专用检测头)</td><td>–</td><td>69.8 / 23.0 / 56.6</td></tr>
+    </table>
+    <p class="tbl-src">数据来源:论文 Table 1(F1@IoU;主文默认 Hybrid 模式)。低 IoU(0.5)略输 Rex-Omni,高 IoU(0.95)大幅反超——块内双向注意力学的正是坐标间的几何耦合。</p>
+    <div class="chart">
+      <div class="chart-t">LVIS F1:IoU=0.5 vs IoU=0.95(论文 Table 1)</div>
+      <div class="bar-row"><span class="bar-label">Rex-Omni @0.5</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">64.3</span></div>
+      <div class="bar-row"><span class="bar-label me">LocateAnything @0.5</span><div class="bar-track"><div class="bar-fill me" style="width:96.9%"></div></div><span class="bar-val me">62.3</span></div>
+      <div class="bar-row"><span class="bar-label me">LocateAnything @0.95</span><div class="bar-track"><div class="bar-fill me" style="width:48.4%"></div></div><span class="bar-val me">31.1</span></div>
+      <div class="bar-row"><span class="bar-label">Rex-Omni @0.95</span><div class="bar-track"><div class="bar-fill" style="width:32.2%"></div></div><span class="bar-val">20.7</span></div>
+      <div class="chart-note">宽 IoU 阈值下打平,严 IoU 阈值下 +10.4:并行块解码没有牺牲精度,反而把「框得准」这件事做赢了。</div>
+    </div>
+    <h3>5.2 密集、GUI、文档与点定位</h3>
+    <table class="tbl">
+      <tr><th>基准</th><th>LocateAnything-3B</th><th>最强对照</th><th>读法</th></tr>
+      <tr><td>Dense200(密集检测)</td><td class="r1">58.7</td><td>Rex-Omni 58.3</td><td>打平略胜;F1@0.95 18.5 vs 10.3 大赢</td></tr>
+      <tr><td>VisDrone(无人机密集)</td><td class="r1">39.9</td><td>Rex-Omni 35.8 · G-DINO 33.1</td><td>密集小目标场景领先</td></tr>
+      <tr><td>ScreenSpot-Pro(GUI)</td><td class="r1">60.3 SOTA</td><td>GUI-Owl-32B 58.0 · Rex-Omni 36.8</td><td>Office Icon 类 69.8 vs GUI-Owl-32B 39.6</td></tr>
+      <tr><td>DocLayNet(文档版面,Mean)</td><td class="r1">76.8</td><td>Rex-Omni 70.7</td><td>+6.1</td></tr>
+      <tr><td>M6Doc(移动文档,Mean)</td><td class="r1">70.1</td><td>Rex-Omni 55.6</td><td>+14.5</td></tr>
+      <tr><td>HumanRef(referring,Mean)</td><td>78.7</td><td class="r1">Rex-Omni 79.9</td><td>mean 略输,0.95 反超(68.8 vs 65.4)</td></tr>
+      <tr><td>点定位(F1@Point,7 项)</td><td class="r1">全胜</td><td>Rex-Omni-3B</td><td>COCO 83.9 / Dense200 87.6 / RefCOCOg val 91.3 等</td></tr>
+    </table>
+    <p class="tbl-src">数据来源:论文 Table 2–5 与附录 Additional Experiments。ScreenSpot-Pro 为专业软件界面(CAD/Office 等)的 GUI grounding,60.3 为当前公开 SOTA。</p>
+    <h3>5.3 消融与「诚实数字」</h3>
+    <p class="body-p">
+      消融(仅 COCO 训练,Table 6)回答三个问题:① 块化表示本身有用吗?——Textual 49.1 / Quantized 50.1 /
+      <strong>PBD-Slow 52.1</strong>(同 BPS 下 +2.0);② 与结构无关的并行方案比呢?——SDLM-B4/6/8 = 46.5/46.1/45.8、
+      Block Diffusion 44.8,全部远低于 PBD-Fast 的 49.6,且 BPS 只有其三分之一;③ 联合损失关键吗?——L_ntp+L_blk
+      把 Slow 上界从 50.1 推到 52.1,只用 L_blk 的 Fast 掉到 47.2。框排序用 X-Y Corner Order 最优;
+      换骨干 Qwen3-VL-4B 复现同样成立(NTP 50.8 → PBD-Hybrid 52.0,BPS 2.8 → 9.4),方法可迁移。
+    </p>
+    <div class="warn">
+      <strong>⚠️ 论文自己埋的「诚实数字」:OCR 上 Fast/Hybrid 救不回来。</strong>模式对比(附录表):
+      吞吐 Fast 15.3 / Hybrid 12.7 / Slow 4.3 BPS;但 HierText 上 28.8(Fast)/ 29.1(Hybrid)/ <strong>43.2(Slow)</strong>,
+      SROIE 上 38.8 / 39.3 / <strong>64.4(Slow)</strong>——小字密排场景并行块解码精度腰斩,Hybrid 的回退机制也兜不住。
+      默认主表全是 Hybrid 口径,部署到 OCR 类负载时这组数字必须先看。
+    </div>
+
+    <!-- ========== 6. 局限与冷思考 ========== -->
+    <h2 id="sec-think">6 · 局限与冷思考</h2>
+    <div class="think">
+      <h4>作者自述</h4>
+      <ul>
+        <li><strong>只用了 SFT,没用 RL</strong>(§5 Limitation):RL 优化块级解码策略、降低回退频率被列为 future work。</li>
+        <li><strong>两类失败模式</strong>(§3.3):类别边界的 Format Irregularity 与网格密集排列的 Spatial Ambiguity——Hybrid 回退是补丁而非根治。</li>
+      </ul>
+      <h4>我读出的(文中未明说)</h4>
+      <ul>
+        <li><strong>OCR 是块并行的真实软肋</strong>:小字密排时坐标高度歧义,块内并行同时猜 4 个坐标的联合分布很难学;Slow 模式 43.2/64.4 vs Hybrid 29.1/39.3 意味着「默认 Hybrid」的营销口径在 OCR 负载上不成立。</li>
+        <li><strong>开源成色要打折</strong>:权重是 NVIDIA 非商用许可(仅学术研究);号称公开的数据集 nvidia/LocateAnything-Data 实际是 gated 需申请;当前发布权重不支持 visual prompt 推理(GitHub Note);模型默认不输出确定性置信度(第三方论文需自构 pseudo-confidence)。</li>
+        <li><strong>数据引擎的自洽闭环</strong>:查询生成、伪标注、最终质检全部经由 Qwen3-VL 一系模型,教师偏置会直接写进 138M 条监督里;论文没有对数据引擎本身的错误率做审计。</li>
+        <li><strong>成本黑箱</strong>:四阶段最多 256 张 GPU,但总机时/数据生产成本未披露;「12M 图 785M 框」的规模叙事与可复现性之间有距离。</li>
+        <li><strong>传播与学术认可不对称</strong>:HF 一周 10 万+ 下载、集成进 Nemotron 3 Nano Omni,但 HN 讨论帖只有 2 分 0 评论;ECCV 2026 接收目前仅有官方 README 与作者主页佐证。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <strong>💡 对我们的特别相关性:</strong>这个 NVIDIA SOTA grounding 模型的骨架是「中国制造」——视觉编码器是月之暗面
+      Kimi-VL 的 <strong>MoonViT-SO-400M</strong>(MIT 许可),语言模型是 <strong>Qwen2.5-3B-Instruct</strong>,
+      数据引擎重度依赖 <strong>Qwen3-VL</strong>(查询生成 + 全部伪标注质检),主要 baseline Rex-Omni / Qwen3-VL /
+      MiMo-VL / GUI-Owl / MAI-UI 等也几乎全是中文开源 VLM 的点名册。它是观察「中文开源组件如何进入 NVIDIA 产品线」
+      (Nemotron / Cosmos)的一个干净样本;PBD 的块对齐思路对我们自己的 grounding/GUI 数据与推理栈也有直接可迁移性。
+    </div>
+
+    <!-- ========== 7. 参考资料 ========== -->
+    <h2 id="sec-refs">7 · 参考资料</h2>
+    <ol class="refs">
+      <li>论文:<a href="https://arxiv.org/abs/2605.27365" target="_blank" rel="noopener">LocateAnything: Fast and High-Quality Vision-Language Grounding with Parallel Box Decoding(arXiv:2605.27365,v2 2026-05-27;官方口径 ECCV 2026 接收)</a></li>
+      <li>项目主页:<a href="https://research.nvidia.com/labs/lpr/locate-anything/" target="_blank" rel="noopener">research.nvidia.com/labs/lpr/locate-anything</a></li>
+      <li>代码:<a href="https://github.com/NVlabs/Eagle/tree/main/Embodied" target="_blank" rel="noopener">github.com/NVlabs/Eagle(Embodied 目录,含训练/评测/LoRA 脚本)</a></li>
+      <li>权重与 Demo:<a href="https://huggingface.co/nvidia/LocateAnything-3B" target="_blank" rel="noopener">huggingface.co/nvidia/LocateAnything-3B</a>(非商用研究许可) · <a href="https://huggingface.co/spaces/nvidia/LocateAnything" target="_blank" rel="noopener">HF Demo</a> · 数据集 nvidia/LocateAnything-Data(gated,需申请)</li>
+      <li>本文全部数字整理自论文 v2 与 HF 模型卡(2026-09-03 时点);模式对比/OCR 掉点数字出自论文附录模式对比表,引用请以原文为准。</li>
+    </ol>
+
+    <a class="back" href="/#research">← 返回 Research 目录</a>
+  </article>
+</div>
+
+<footer class="footer">
+  <p>© 2026 Caesar-s1mple · 本文整理自公开资料,数据以各官方渠道为准 · 如有勘误欢迎到 <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">GitHub 仓库</a> 提 issue</p>
+  <p class="egg">站点自检:1 + 1 = 2 ✓ 一切正常</p>
+</footer>
+
+<script>
+/* ================= 目录 + scrollspy ================= */
+const TOC_ITEMS = [
+  { id: "sec-overview",   t: "1 · 总览:一次前向,框全出来", l1: true },
+  { id: "sec-motivation", t: "2 · 动机:串行 vs 几何", l1: true },
+  { id: "sec-method",     t: "3 · 方法:Parallel Box Decoding", l1: true },
+  { id: "sec-data",       t: "4 · 数据与训练", l1: true },
+  { id: "sec-exp",        t: "5 · 实验:快 2.5×,而且更准", l1: true },
+  { id: "sec-think",      t: "6 · 局限与冷思考", l1: true },
+  { id: "sec-refs",       t: "7 · 参考资料", l1: true }
+];
+document.getElementById("toc").innerHTML =
+  `<div class="toc-title">目录</div>` +
+  TOC_ITEMS.map(i => `<a href="#${i.id}" class="${i.l1 ? "l1" : "l2"}" data-toc="${i.id}">${i.t}</a>`).join("");
+document.getElementById("toc-mobile").innerHTML =
+  TOC_ITEMS.map(i => `<a href="#${i.id}" style="${i.l1 ? "font-weight:600" : "padding-left:16px"}">${i.t}</a>`).join("");
+
+const tocLinks = {};
+document.querySelectorAll("[data-toc]").forEach(a => tocLinks[a.dataset.toc] = a);
+const spy = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      Object.values(tocLinks).forEach(a => a.classList.remove("on"));
+      const link = tocLinks[e.target.id];
+      if (link) { link.classList.add("on"); link.scrollIntoView({ block: "nearest" }); }
+    }
+  });
+}, { rootMargin: "-70px 0px -65% 0px" });
+TOC_ITEMS.forEach(i => { const el = document.getElementById(i.id); if (el) spy.observe(el); });
+</script>
+</body>
+</html>
