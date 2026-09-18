@@ -63,6 +63,9 @@
   .art h2:first-of-type { margin-top: 0; }
   .sec-intro { color: var(--muted); font-size: 0.95rem; margin-bottom: 30px; max-width: 700px; }
   .fig { margin: 26px 0; }
+  .fig svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+  .fig figcaption { margin-top: 10px; font-size: 0.82rem; color: var(--faint); line-height: 1.55; }
+  .fig figcaption b { color: var(--muted); }
   .art p.body-p { margin: 14px 0; font-size: 0.95rem; }
   .art p.body-p strong { color: var(--ink); }
 
@@ -231,9 +234,80 @@
       </div>
     </div>
 
+    <div class="chart">
+      <div class="chart-t">三份独立基准,同一个人机差距故事(%)</div>
+      <div class="bar-row"><span class="bar-label">人类 · VSI-Bench</span><div class="bar-track"><div class="bar-fill" style="width:81.6%"></div></div><span class="bar-val">79.2</span></div>
+      <div class="bar-row"><span class="bar-label me">Gemini-1.5 Pro(VSI)</span><div class="bar-track"><div class="bar-fill me" style="width:50.2%"></div></div><span class="bar-val me">48.8</span></div>
+      <div class="bar-row"><span class="bar-label me">GPT-5(VSI,2025)</span><div class="bar-track"><div class="bar-fill me" style="width:56.7%"></div></div><span class="bar-val me">55.0</span></div>
+      <div class="bar-row"><span class="bar-label">人类 · MMSI-Bench</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">97.0</span></div>
+      <div class="bar-row"><span class="bar-label me">GPT-5(MMSI)</span><div class="bar-track"><div class="bar-fill me" style="width:41.2%"></div></div><span class="bar-val me">40.0</span></div>
+      <div class="bar-row"><span class="bar-label me">PB 最高模型</span><div class="bar-track"><div class="bar-fill me" style="width:61.5%"></div></div><span class="bar-val me">59.7</span></div>
+      <div class="chart-note">灰=人类基线,蓝=当时最强模型。PerceptionBench(PB)无官方人类基线,取 16 个前沿模型最高分,其幻觉子项平均仅 36.7%。来源:VSI-Bench(2024-12)、MMSI-Bench(2025-05)、PerceptionBench(2026-07)。</div>
+    </div>
+
     <!-- ========== 2. 大事记 ========== -->
     <h2 id="sec-timeline">2 · 两年大事记(2024-01 → 2026-09)</h2>
     <p class="sec-intro">按时间轴看重心的三次迁移:通用 VLA 首战(2024)→ 泛化、端侧、脑身分离(2025)→ RL 自改进与全身控制(2026)。</p>
+    <figure class="fig">
+      <svg viewBox="0 0 800 300" role="img" aria-label="2024 至 2026 具身智能大事时间线">
+        <rect x="50" y="20" width="270" height="252" fill="rgba(59,79,216,.08)"/>
+        <rect x="320" y="20" width="270" height="252" fill="rgba(13,148,136,.07)"/>
+        <rect x="590" y="20" width="190" height="252" fill="rgba(180,83,9,.08)"/>
+        <text x="185" y="36" text-anchor="middle" font-size="10" fill="#626b7a" font-weight="600">通用 VLA 首战</text>
+        <text x="455" y="36" text-anchor="middle" font-size="10" fill="#626b7a" font-weight="600">泛化 · 端侧 · 脑身分层</text>
+        <text x="685" y="36" text-anchor="middle" font-size="10" fill="#626b7a" font-weight="600">RL 自改进 · 全身控制</text>
+        <line x1="40" y1="170" x2="780" y2="170" stroke="#e9e6df" stroke-width="2"/>
+        <line x1="50" y1="164" x2="50" y2="176" stroke="#98a1ae"/>
+        <line x1="320" y1="164" x2="320" y2="176" stroke="#98a1ae"/>
+        <line x1="590" y1="164" x2="590" y2="176" stroke="#98a1ae"/>
+        <text x="50" y="290" font-size="10" fill="#98a1ae">2024</text>
+        <text x="320" y="290" font-size="10" fill="#98a1ae">2025</text>
+        <text x="590" y="290" font-size="10" fill="#98a1ae">2026</text>
+        <!-- 上方行 A (y=64) -->
+        <line x1="162" y1="70" x2="162" y2="166" stroke="#e9e6df"/><circle cx="162" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="162" y="64" text-anchor="middle" font-size="9.5" fill="#1c2333">OpenVLA 开源</text>
+        <line x1="365" y1="70" x2="365" y2="166" stroke="#e9e6df"/><circle cx="365" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="365" y="64" text-anchor="middle" font-size="9.5" fill="#1c2333">GR · GO-1 · GR00T</text>
+        <line x1="500" y1="70" x2="500" y2="166" stroke="#e9e6df"/><circle cx="500" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="500" y="64" text-anchor="middle" font-size="9" fill="#1c2333">GR1.5 · GO-1 开源</text>
+        <line x1="612" y1="70" x2="612" y2="166" stroke="#e9e6df"/><circle cx="612" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="612" y="64" text-anchor="middle" font-size="9.5" fill="#1c2333">RynnBrain 1.0</text>
+        <!-- 上方行 B (y=94) -->
+        <line x1="342" y1="100" x2="342" y2="166" stroke="#e9e6df"/><circle cx="342" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="342" y="94" text-anchor="middle" font-size="9.5" fill="#1c2333">Figure Helix</text>
+        <line x1="432" y1="100" x2="432" y2="166" stroke="#e9e6df"/><circle cx="432" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="432" y="94" text-anchor="middle" font-size="9.5" fill="#1c2333">V-JEPA 2</text>
+        <line x1="590" y1="100" x2="590" y2="166" stroke="#e9e6df"/><circle cx="590" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="590" y="94" text-anchor="middle" font-size="9.5" fill="#1c2333">LingBot · Spirit v1.5</text>
+        <!-- 上方行 C (y=124) -->
+        <line x1="50" y1="130" x2="50" y2="166" stroke="#e9e6df"/><circle cx="50" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="50" y="124" text-anchor="start" font-size="9.5" fill="#1c2333">Mobile ALOHA</text>
+        <line x1="252" y1="130" x2="252" y2="166" stroke="#e9e6df"/><circle cx="252" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="252" y="124" text-anchor="middle" font-size="9.5" fill="#1c2333"><tspan font-family="Georgia,serif">π</tspan>0 · GR-2 · RDT-1B</text>
+        <line x1="387" y1="130" x2="387" y2="166" stroke="#e9e6df"/><circle cx="387" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="387" y="124" text-anchor="middle" font-size="9.5" fill="#1c2333"><tspan font-family="Georgia,serif">π</tspan>0.5</text>
+        <line x1="477" y1="130" x2="477" y2="166" stroke="#e9e6df"/><circle cx="477" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="477" y="124" text-anchor="middle" font-size="9.5" fill="#1c2333">Genie 3</text>
+        <line x1="548" y1="130" x2="548" y2="166" stroke="#e9e6df"/><circle cx="548" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="548" y="124" text-anchor="middle" font-size="9.5" fill="#1c2333"><tspan font-family="Georgia,serif">π</tspan>*0.6</text>
+        <line x1="725" y1="130" x2="725" y2="166" stroke="#e9e6df"/><circle cx="725" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="725" y="124" text-anchor="middle" font-size="9" fill="#1c2333">GR 2 · RynnBrain 1.1 · PB</text>
+        <!-- 下方行 D (y=212) -->
+        <line x1="297" y1="178" x2="297" y2="206" stroke="#e9e6df"/><circle cx="297" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="297" y="212" text-anchor="middle" font-size="9.5" fill="#1c2333">VSI-Bench</text>
+        <line x1="455" y1="178" x2="455" y2="206" stroke="#e9e6df"/><circle cx="455" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="455" y="212" text-anchor="middle" font-size="9.5" fill="#1c2333">GR-3 · Tairos</text>
+        <line x1="570" y1="178" x2="570" y2="206" stroke="#e9e6df"/><circle cx="570" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="570" y="212" text-anchor="middle" font-size="9.5" fill="#1c2333">智元 5000 台下线</text>
+        <circle cx="770" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="776" y="212" text-anchor="end" font-size="9.5" fill="#1c2333">UnifoLM-WLA-1.0</text>
+        <line x1="770" y1="178" x2="770" y2="206" stroke="#e9e6df"/>
+        <!-- 下方行 E (y=242) -->
+        <line x1="522" y1="178" x2="522" y2="236" stroke="#e9e6df"/><circle cx="522" cy="170" r="4" fill="#3b4fd8"/>
+        <text x="522" y="242" text-anchor="middle" font-size="9.5" fill="#1c2333">Figure 03 · NEO 预售</text>
+      </svg>
+      <figcaption><b>图 1</b>:2024-01 → 2026-09 大事记。三个阶段带对应重心迁移:2024 年证明「VLM 能出动作」,2025 年解决「泛化、端侧、分层」,2026 年转向「RL 自改进与全身控制」。</figcaption>
+    </figure>
     <table class="tbl">
       <tr><th>时间</th><th>事件</th><th>为什么重要</th></tr>
       <tr><td>2024-01</td><td>Mobile ALOHA(斯坦福)</td><td>$32K 双臂移动遥操作,低成本数据采集范式</td></tr>
@@ -262,6 +336,46 @@
     <!-- ========== 3. 技术路线 ========== -->
     <h2 id="sec-routes">3 · 怎么做:三条路线与 2026 年的收敛</h2>
     <p class="sec-intro">端到端 VLA、分层大小脑、世界模型——2026 年它们不是三选一,而是融合成同一个栈。</p>
+    <figure class="fig">
+      <svg viewBox="0 0 780 300" role="img" aria-label="三条技术路线收敛为同一个栈">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#98a1ae"/>
+          </marker>
+        </defs>
+        <rect x="20" y="30" width="190" height="62" rx="10" fill="#ffffff" stroke="#e9e6df"/>
+        <text x="34" y="54" font-size="11" font-weight="700" fill="#1c2333">端到端 VLA</text>
+        <text x="34" y="72" font-size="9.5" fill="#626b7a">离散 token → flow-matching</text>
+        <text x="34" y="86" font-size="9.5" fill="#626b7a">RT-2 → <tspan font-family="Georgia,serif">π</tspan>0 · CogACT · GR-3</text>
+        <rect x="20" y="119" width="190" height="62" rx="10" fill="#ffffff" stroke="#e9e6df"/>
+        <text x="34" y="143" font-size="11" font-weight="700" fill="#1c2333">分层大脑/小脑</text>
+        <text x="34" y="161" font-size="9.5" fill="#626b7a">慢脑规划 + 快手执行</text>
+        <text x="34" y="175" font-size="9.5" fill="#626b7a">Helix · GR00T · GO-1</text>
+        <rect x="20" y="208" width="190" height="62" rx="10" fill="#ffffff" stroke="#e9e6df"/>
+        <text x="34" y="232" font-size="11" font-weight="700" fill="#1c2333">世界模型</text>
+        <text x="34" y="250" font-size="9.5" fill="#626b7a">生成未来 → 反推动作</text>
+        <text x="34" y="264" font-size="9.5" fill="#626b7a">UniPi → Cosmos · V-JEPA 2</text>
+        <line x1="210" y1="61" x2="292" y2="61" stroke="#98a1ae" marker-end="url(#arr)"/>
+        <line x1="210" y1="150" x2="292" y2="150" stroke="#98a1ae" marker-end="url(#arr)"/>
+        <line x1="210" y1="239" x2="292" y2="239" stroke="#98a1ae" marker-end="url(#arr)"/>
+        <rect x="296" y="24" width="464" height="54" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".3"/>
+        <text x="312" y="46" font-size="11" font-weight="700" fill="#1c2333">① 世界模型造数据</text>
+        <text x="312" y="64" font-size="9.5" fill="#626b7a">Cosmos · DreamGen:11 小时生成 78 万条合成轨迹(自报);GraspVLA 10 亿帧纯合成</text>
+        <rect x="296" y="90" width="464" height="54" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".3"/>
+        <text x="312" y="112" font-size="11" font-weight="700" fill="#1c2333">② 慢脑 VLM 规划(7-10Hz)</text>
+        <text x="312" y="130" font-size="9.5" fill="#626b7a">Gemini ER 1.5 · 字节 Robix · GO-1 Latent Planner:理解 → 空间 → 子任务</text>
+        <rect x="296" y="156" width="464" height="54" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".3"/>
+        <text x="312" y="178" font-size="11" font-weight="700" fill="#1c2333">③ 快手动作专家(120-200Hz)</text>
+        <text x="312" y="196" font-size="9.5" fill="#626b7a">flow-matching / DiT 连续动作块:<tspan font-family="Georgia,serif">π</tspan>0 · GR00T S1 · Helix S1 · GR-3</text>
+        <rect x="296" y="222" width="464" height="54" rx="10" fill="rgba(13,148,136,.08)" stroke="#0d9488" stroke-opacity=".35"/>
+        <text x="312" y="244" font-size="11" font-weight="700" fill="#1c2333">④ RL 自改进回流</text>
+        <text x="312" y="262" font-size="9.5" fill="#626b7a"><tspan font-family="Georgia,serif">π</tspan>*0.6 RECAP · 失败数据飞轮:部署 → 失败 → 标注 → 再训练</text>
+        <line x1="528" y1="78" x2="528" y2="88" stroke="#98a1ae" marker-end="url(#arr)"/>
+        <line x1="528" y1="144" x2="528" y2="154" stroke="#98a1ae" marker-end="url(#arr)"/>
+        <line x1="528" y1="210" x2="528" y2="220" stroke="#98a1ae" marker-end="url(#arr)"/>
+      </svg>
+      <figcaption><b>图 2</b>:2026 年的实际收敛——三条路线融合为同一个栈:世界模型造数据,慢脑做语义与空间规划,快手动作专家出高频动作,RL 与失败数据负责自我改进。</figcaption>
+    </figure>
 
     <h3>3.1 端到端 VLA:action 表示的两次迭代</h3>
     <p class="body-p">
@@ -304,6 +418,38 @@
       两系统的<strong>接口</strong>没有共识:Helix 用 latent,GO-1 用 latent action tokens,Robix/ER 偏向文本与结构化指令。
       高层错误会级联到小脑,而高层「大脑」本身的空间推理短板(第 8 节)直接封顶整个系统。
     </p>
+    <figure class="fig">
+      <svg viewBox="0 0 780 250" role="img" aria-label="慢脑快手分层架构图">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#98a1ae"/>
+          </marker>
+        </defs>
+        <rect x="30" y="40" width="220" height="110" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".3"/>
+        <text x="46" y="64" font-size="11.5" font-weight="700" fill="#1c2333">System 2 · 慢脑</text>
+        <text x="46" y="82" font-size="9.5" fill="#626b7a">VLM 2-7B · 7-10Hz</text>
+        <text x="46" y="97" font-size="9.5" fill="#626b7a">语义理解 · 空间推理 · 任务规划</text>
+        <text x="46" y="118" font-size="9" fill="#98a1ae">Helix S2(7B)· Gemini ER ·</text>
+        <text x="46" y="131" font-size="9" fill="#98a1ae">GO-1 VLM + Latent Planner</text>
+        <rect x="280" y="70" width="170" height="50" rx="10" fill="#fff" stroke="#b45309" stroke-dasharray="5 4"/>
+        <text x="365" y="91" text-anchor="middle" font-size="9.5" font-weight="600" fill="#b45309">接口:latent / 文本 / waypoint</text>
+        <text x="365" y="106" text-anchor="middle" font-size="9" fill="#626b7a">(无共识,错误沿此级联)</text>
+        <rect x="480" y="40" width="200" height="110" rx="10" fill="rgba(13,148,136,.08)" stroke="#0d9488" stroke-opacity=".4"/>
+        <text x="496" y="64" font-size="11.5" font-weight="700" fill="#1c2333">System 1 · 快手</text>
+        <text x="496" y="82" font-size="9.5" fill="#626b7a">动作专家 · 120-200Hz</text>
+        <text x="496" y="97" font-size="9.5" fill="#626b7a">flow-matching / DiT 动作块</text>
+        <text x="496" y="118" font-size="9" fill="#98a1ae">Helix S1(80M)· GR00T S1 · <tspan font-family="Georgia,serif">π</tspan>0</text>
+        <line x1="250" y1="95" x2="278" y2="95" stroke="#98a1ae" marker-end="url(#arr2)"/>
+        <line x1="450" y1="95" x2="478" y2="95" stroke="#98a1ae" marker-end="url(#arr2)"/>
+        <rect x="480" y="185" width="200" height="45" rx="10" fill="#ffffff" stroke="#e9e6df"/>
+        <text x="580" y="212" text-anchor="middle" font-size="10" fill="#1c2333">机器人本体 35+ DoF</text>
+        <line x1="580" y1="150" x2="580" y2="183" stroke="#98a1ae" marker-end="url(#arr2)"/>
+        <rect x="30" y="185" width="420" height="45" rx="10" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="44" y="204" font-size="9.5" fill="#92400e">为什么必须分层:通用 LLM 推理 ~0.2-0.4Hz,</text>
+        <text x="44" y="219" font-size="9.5" fill="#92400e">而直接关节控制需要 ~83Hz(Anthropic 2026-07 实测)</text>
+      </svg>
+      <figcaption><b>图 3</b>:「慢脑 + 快手」双系统的标准形态。2026 年的演进方向是层数继续加深——Helix 02 已新增 S0(10M 参数、1kHz 全身控制器),而非回到端到端单模型。</figcaption>
+    </figure>
 
     <h3>3.3 世界模型:从「当控制器」退到「造数据、做规划」</h3>
     <p class="body-p">
@@ -441,6 +587,48 @@
       而药房/工厂/产线的<strong>落地密度恰恰是数据飞轮最稀缺的原料</strong>——这是国内路线的真实底气,
       短板则在 frontier 基座模型能力(多数大脑仍站在 Qwen/InternVL 肩上,而非自研基座)。
     </p>
+    <figure class="fig">
+      <svg viewBox="0 0 780 430" role="img" aria-label="国内外具身玩家版图">
+        <defs>
+          <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#98a1ae"/>
+          </marker>
+        </defs>
+        <rect x="70" y="30" width="670" height="340" fill="none" stroke="#e9e6df"/>
+        <line x1="405" y1="30" x2="405" y2="370" stroke="#e9e6df" stroke-dasharray="4 4"/>
+        <line x1="70" y1="200" x2="740" y2="200" stroke="#e9e6df" stroke-dasharray="4 4"/>
+        <line x1="70" y1="370" x2="748" y2="370" stroke="#98a1ae" marker-end="url(#arr4)"/>
+        <line x1="70" y1="370" x2="70" y2="22" stroke="#98a1ae" marker-end="url(#arr4)"/>
+        <text x="748" y="396" text-anchor="end" font-size="10" fill="#626b7a">具身大脑自研深度 →</text>
+        <text x="40" y="200" text-anchor="middle" font-size="10" fill="#626b7a" transform="rotate(-90 40 200)">本体/场景落地 →</text>
+        <text x="80" y="44" font-size="9" fill="#98a1ae">落地强 · 大脑弱</text>
+        <text x="730" y="62" text-anchor="end" font-size="9" fill="#98a1ae">全栈</text>
+        <text x="80" y="342" font-size="9" fill="#98a1ae">两层都缺</text>
+        <text x="730" y="358" text-anchor="end" font-size="9" fill="#98a1ae">大脑强 · 落地弱</text>
+        <circle cx="610" cy="42" r="5" fill="#b45309"/><text x="620" y="45" font-size="9" fill="#626b7a">海外</text>
+        <circle cx="660" cy="42" r="5" fill="#3b4fd8"/><text x="670" y="45" font-size="9" fill="#626b7a">国内</text>
+        <!-- 海外 gold -->
+        <circle cx="639" cy="183" r="6" fill="#b45309"/><text x="649" y="187" font-size="9.5" fill="#1c2333">Google</text>
+        <circle cx="539" cy="285" r="6" fill="#b45309"/><text x="549" y="289" font-size="9.5" fill="#1c2333">NVIDIA</text>
+        <circle cx="673" cy="302" r="6" fill="#b45309"/><text x="683" y="306" font-size="9.5" fill="#1c2333">PI</text>
+        <circle cx="539" cy="115" r="6" fill="#b45309"/><text x="549" y="119" font-size="9.5" fill="#1c2333">Figure</text>
+        <circle cx="438" cy="166" r="6" fill="#b45309"/><text x="448" y="170" font-size="9.5" fill="#1c2333">1X</text>
+        <circle cx="204" cy="132" r="6" fill="#b45309"/><text x="214" y="136" font-size="9.5" fill="#1c2333">Tesla</text>
+        <circle cx="110" cy="360" r="6" fill="#b45309"/><text x="120" y="364" font-size="9.5" fill="#1c2333">OpenAI</text>
+        <circle cx="164" cy="336" r="6" fill="#b45309"/><text x="174" y="340" font-size="9.5" fill="#1c2333">Anthropic</text>
+        <!-- 国内 indigo -->
+        <circle cx="606" cy="64" r="6" fill="#3b4fd8"/><text x="616" y="68" font-size="9.5" fill="#1c2333">智元 AgiBot</text>
+        <circle cx="572" cy="98" r="6" fill="#3b4fd8"/><text x="582" y="102" font-size="9.5" fill="#1c2333">银河通用</text>
+        <circle cx="606" cy="319" r="6" fill="#3b4fd8"/><text x="616" y="323" font-size="9.5" fill="#1c2333">阿里 RynnBrain</text>
+        <circle cx="572" cy="336" r="6" fill="#3b4fd8"/><text x="582" y="340" font-size="9.5" fill="#1c2333">字节 Seed</text>
+        <circle cx="472" cy="329" r="6" fill="#3b4fd8"/><text x="482" y="333" font-size="9.5" fill="#1c2333">腾讯 Tairos</text>
+        <circle cx="405" cy="47" r="6" fill="#3b4fd8"/><text x="415" y="51" font-size="9.5" fill="#1c2333">宇树 Unitree</text>
+        <circle cx="271" cy="81" r="6" fill="#3b4fd8"/><text x="281" y="85" font-size="9.5" fill="#1c2333">优必选</text>
+        <circle cx="472" cy="217" r="6" fill="#3b4fd8"/><text x="482" y="221" font-size="9.5" fill="#1c2333">千寻 · 星海图 · 自变量</text>
+        <circle cx="438" cy="353" r="6" fill="#3b4fd8"/><text x="448" y="357" font-size="9.5" fill="#1c2333">BAAI · 上海 AI Lab</text>
+      </svg>
+      <figcaption><b>图 4</b>:玩家版图(定性判断,非定量排名)。两个值得注意的位置:OpenAI/Anthropic 在左下角——大模型公司还没进场;智元/银河通用在右上——中国全栈玩家靠落地密度卡位数据飞轮。</figcaption>
+    </figure>
 
     <!-- ========== 6. 数据 ========== -->
     <h2 id="sec-data">6 · 数据:缺的不只是量,是结构</h2>
@@ -449,6 +637,14 @@
       <div class="stat"><b>&lt;5000 h</b><span>开源真实交互数据</span></div>
       <div class="stat"><b>0.1%–1%</b><span>相当于前沿所需量的比例</span></div>
       <div class="stat"><b>10 亿 h</b><span>对比:互联网视频量级</span></div>
+    </div>
+    <div class="chart">
+      <div class="chart-t">数据量级对比(条宽为 log10 刻度)</div>
+      <div class="bar-row"><span class="bar-label">互联网视频</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">~10亿 h</span></div>
+      <div class="bar-row"><span class="bar-label me">全球机器人数据</span><div class="bar-track"><div class="bar-fill me" style="width:61%"></div></div><span class="bar-val me">~30万 h</span></div>
+      <div class="bar-row"><span class="bar-label me">开源真实交互</span><div class="bar-track"><div class="bar-fill me" style="width:41%"></div></div><span class="bar-val me">&lt;5000 h</span></div>
+      <div class="bar-row"><span class="bar-label me">DROID 单集</span><div class="bar-track"><div class="bar-fill me" style="width:28%"></div></div><span class="bar-val me">350 h</span></div>
+      <div class="chart-note">log10 刻度:若按线性刻度,后三根条在图上几乎不可见。「~30 万小时」为机构估计口径(Bessemer / Stellaris,2026),非公开数据集加总。</div>
     </div>
     <h3>6.1 现有数据池:两个百万级,但都有「但是」</h3>
     <table class="tbl">
@@ -487,6 +683,38 @@
       谁先跑通,谁把「数据竞赛」变成「部署密度竞赛」——这也是智元 5000 台、银河通用 100+ 药店、
       1X 家庭试点在战略上的真正含义。
     </p>
+    <figure class="fig">
+      <svg viewBox="0 0 780 310" role="img" aria-label="数据飞轮循环图">
+        <defs>
+          <marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#98a1ae"/>
+          </marker>
+        </defs>
+        <path d="M401.4,68.8 A82,82 0 0 1 463.7,114" fill="none" stroke="#98a1ae" marker-end="url(#arr3)"/>
+        <path d="M470.8,135.7 A82,82 0 0 1 447,209" fill="none" stroke="#98a1ae" marker-end="url(#arr3)"/>
+        <path d="M428.5,222.4 A82,82 0 0 1 351.5,222.4" fill="none" stroke="#98a1ae" marker-end="url(#arr3)"/>
+        <path d="M333,209 A82,82 0 0 1 309.2,135.7" fill="none" stroke="#98a1ae" marker-end="url(#arr3)"/>
+        <path d="M316.3,114.1 A82,82 0 0 1 378.6,68.8" fill="none" stroke="#98a1ae" marker-end="url(#arr3)"/>
+        <rect x="332" y="28" width="116" height="44" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".35"/>
+        <text x="390" y="46" text-anchor="middle" font-size="10" font-weight="700" fill="#1c2333">部署真实本体</text>
+        <text x="390" y="62" text-anchor="middle" font-size="8.5" fill="#626b7a">5000 台 · 药店 · 家庭</text>
+        <rect x="432" y="96" width="116" height="44" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".35"/>
+        <text x="490" y="114" text-anchor="middle" font-size="10" font-weight="700" fill="#1c2333">回收失败/边缘 case</text>
+        <text x="490" y="130" text-anchor="middle" font-size="8.5" fill="#626b7a">遥操纠正 · 失败轨迹</text>
+        <rect x="394" y="213" width="116" height="44" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".35"/>
+        <text x="452" y="231" text-anchor="middle" font-size="10" font-weight="700" fill="#1c2333">自动标注/归因</text>
+        <text x="452" y="247" text-anchor="middle" font-size="8.5" fill="#626b7a">VLM 打标 · first-error</text>
+        <rect x="270" y="213" width="116" height="44" rx="10" fill="rgba(59,79,216,.08)" stroke="#3b4fd8" stroke-opacity=".35"/>
+        <text x="328" y="231" text-anchor="middle" font-size="10" font-weight="700" fill="#1c2333">回流训练</text>
+        <text x="328" y="247" text-anchor="middle" font-size="8.5" fill="#626b7a">SFT · RL 后训练</text>
+        <rect x="232" y="96" width="116" height="44" rx="10" fill="rgba(13,148,136,.08)" stroke="#0d9488" stroke-opacity=".4"/>
+        <text x="290" y="114" text-anchor="middle" font-size="10" font-weight="700" fill="#1c2333">更强的模型</text>
+        <text x="290" y="130" text-anchor="middle" font-size="8.5" fill="#626b7a">再部署,循环加速</text>
+        <text x="390" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#3b4fd8">数据飞轮</text>
+        <text x="390" y="166" text-anchor="middle" font-size="9" fill="#626b7a">2026 的真正分水岭</text>
+      </svg>
+      <figcaption><b>图 5</b>:数据飞轮——部署密度决定失败数据的回收速度,自动标注决定回收数据的可用性。智元 5000 台、银河通用 100+ 药店、1X 家庭试点、Figure BotQ 的本质都是飞轮的第一圈。</figcaption>
+    </figure>
 
     <!-- ========== 7. Benchmark ========== -->
     <h2 id="sec-bench">7 · Benchmark:一场三层评测危机</h2>
