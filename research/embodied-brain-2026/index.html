@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>具身大脑这两年:VLA 收敛、数据饥渴与评测危机(2024–2026 全景调研) · Caesar-s1mple</title>
+<meta name="description" content="2024–2026 具身智能全景调研:技术路线如何收敛到「VLA 主干 + 大小脑分层 + 世界模型做数据引擎」;数据缺口 3–6 个数量级、仿真评测被刷穿、空间感知成公共瓶颈;Google / OpenAI / Anthropic / NVIDIA / PI 与智元 / 银河通用 / 字节 / 阿里 RynnBrain(Qwen)/ 腾讯 / 宇树逐家拆解,并给出「需要什么样 benchmark」的判断。">
+<!-- 首页卡片元数据:供 tools/sync_index.py 生成首页条目,标题取本文 h1 标签,摘要取上面 description -->
+<meta name="card:date" content="2026-09-18">
+<meta name="card:read" content="约 35 分钟阅读">
+<meta name="card:tags" content="行业调研|具身智能|VLA">
+<meta name="card:cover-sub" content="2024–2026 · VLA · 具身大脑 · 数据与评测">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  /* ---------- 文章头 ---------- */
+  .article-head { padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+  .crumb { font-size: 0.84rem; color: var(--faint); margin-bottom: 22px; }
+  .crumb a { color: var(--muted); }
+  .article-head h1 {
+    font-family: var(--serif); font-weight: 600;
+    font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.2; letter-spacing: -0.3px;
+    margin: 12px 0 16px; max-width: 780px;
+  }
+  .article-sub { color: var(--muted); font-size: 1.02rem; max-width: 720px; }
+  .article-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; font-size: 0.85rem; color: var(--faint); align-items: center; }
+  .pill {
+    font-size: 0.72rem; font-weight: 600; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .pill.green { background: rgba(13,148,136,.1); color: var(--teal); }
+  .abstract {
+    margin-top: 28px; max-width: 760px;
+    background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 18px 22px;
+    font-size: 0.92rem; color: var(--muted);
+  }
+  .abstract strong { color: var(--ink); }
+
+  /* ---------- 双栏布局 ---------- */
+  .layout {
+    display: grid; grid-template-columns: 250px minmax(0, 780px);
+    gap: 56px; justify-content: center; padding-top: 48px;
+  }
+
+  /* ---------- 目录 ---------- */
+  .toc { position: sticky; top: 86px; align-self: start; max-height: calc(100vh - 110px); overflow-y: auto; padding-right: 8px; }
+  .toc-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 2px; color: var(--faint); text-transform: uppercase; margin-bottom: 14px; }
+  .toc a { display: block; color: var(--muted); font-size: 0.85rem; padding: 4px 0 4px 14px; border-left: 2px solid var(--line); line-height: 1.45; }
+  .toc a:hover { color: var(--ink); text-decoration: none; }
+  .toc a.l1 { font-weight: 600; color: var(--ink); margin-top: 12px; }
+  .toc a.l2 { color: var(--muted); }
+  .toc a.on { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .toc-details { display: none; }
+
+  /* ---------- 章节 ---------- */
+  .art h2 {
+    font-family: var(--serif); font-size: 1.75rem; font-weight: 600;
+    margin: 72px 0 8px; padding-top: 20px; scroll-margin-top: 76px;
+  }
+  .art h2:first-of-type { margin-top: 0; }
+  .sec-intro { color: var(--muted); font-size: 0.95rem; margin-bottom: 30px; max-width: 700px; }
+  .fig { margin: 26px 0; }
+  .art p.body-p { margin: 14px 0; font-size: 0.95rem; }
+  .art p.body-p strong { color: var(--ink); }
+
+  .statband { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 26px 0; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 16px; text-align: center;
+  }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--accent); }
+  .stat span { font-size: 0.78rem; color: var(--muted); }
+  .warn {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+    padding: 16px 20px; font-size: 0.88rem; color: #92400e; margin: 24px 0;
+  }
+  .warn strong { color: #78350f; }
+
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 20px 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table.tbl th { text-align: left; font-size: 0.74rem; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #fcfbfa; }
+  table.tbl td { padding: 9px 14px; border-bottom: 1px solid #f1efe9; }
+  table.tbl tr:last-child td { border-bottom: none; }
+  table.tbl tr:hover td { background: #fafaf7; }
+  table.tbl td.r1 { font-weight: 700; color: var(--accent); }
+  .tbl-src { font-size: 0.78rem; color: var(--faint); margin-top: -10px; margin-bottom: 20px; }
+
+  .chart { background: #fcfbfa; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin: 18px 0; }
+  .chart-t { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 0.8rem; }
+  .bar-label { width: 150px; text-align: right; color: var(--muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-label.me { color: var(--accent); font-weight: 700; }
+  .bar-track { flex: 1; height: 16px; background: #f0eee8; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; background: #c7cdd8; min-width: 2px; }
+  .bar-fill.me { background: linear-gradient(90deg, var(--accent), var(--teal)); }
+  .bar-val { width: 56px; flex-shrink: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .bar-val.me { color: var(--ink); font-weight: 700; }
+  .chart-note { font-size: 0.76rem; color: var(--faint); margin-top: 10px; }
+
+  .think { margin: 14px 0; }
+  .think h4 { font-family: var(--serif); font-size: 1.08rem; font-weight: 600; margin: 26px 0 6px; }
+  .think p, .think li { font-size: 0.93rem; color: #3a4354; }
+  .refs { font-size: 0.86rem; color: var(--muted); }
+  .refs li { margin-bottom: 8px; }
+  .back { display: inline-block; margin-top: 56px; font-size: 0.9rem; font-weight: 600; }
+
+  /* ---------- 本文特定 ---------- */
+  .art h3 { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; margin: 30px 0 6px; }
+  .art ul, .art ol { margin: 10px 0 16px 22px; font-size: 0.93rem; color: #3a4354; }
+  .art ul li, .art ol li { margin-bottom: 7px; line-height: 1.7; }
+  .art code { font-family: var(--mono); font-size: 0.82em; background: #f1efe9; border-radius: 5px; padding: 1px 6px; }
+
+  .ceagrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 22px 0; }
+  .ceagrid > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .ceagrid b.t { display: block; font-family: var(--serif); font-size: 1.02rem; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .ceagrid p { font-size: 0.87rem; color: #3a4354; line-height: 1.65; }
+
+  .flow { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; margin: 20px 0; }
+  .fstep { flex: 1; min-width: 108px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .fstep b { display: block; font-size: 0.84rem; margin-bottom: 4px; }
+  .fstep span { font-size: 0.72rem; color: var(--faint); font-family: var(--mono); line-height: 1.5; display: block; }
+  .farrow { display: flex; align-items: center; color: var(--faint); font-size: 0.9rem; }
+
+  .note {
+    background: rgba(13,148,136,.06); border: 1px solid rgba(13,148,136,.28); border-radius: 12px;
+    padding: 16px 20px; font-size: 0.9rem; color: #115e59; margin: 24px 0; line-height: 1.7;
+  }
+  .note strong { color: #0f766e; }
+
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .toc { display: none; }
+    .toc-details { display: block; position: sticky; top: 58px; z-index: 40; background: rgba(250,249,246,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 0; margin-bottom: 10px; }
+    .toc-details summary { font-size: 0.88rem; font-weight: 600; color: var(--accent); cursor: pointer; }
+    .toc-details a { display: block; padding: 5px 0; font-size: 0.85rem; color: var(--muted); }
+    .statband { grid-template-columns: repeat(2, 1fr); }
+    .ceagrid { grid-template-columns: 1fr; }
+    .bar-label { width: 104px; font-size: 0.74rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/">Caesar<em>-s1mple</em></a>
+    <div class="nav-links">
+      <a href="/">首页</a>
+      <a href="/#research" class="here">Research</a>
+      <a href="/#projects">Projects</a>
+      <a href="/#blog">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<header class="article-head">
+  <div class="wrap">
+    <div class="crumb"><a href="/">首页</a> / <a href="/#research">Research</a> / 具身智能行业调研</div>
+    <div class="kicker">行业深度调研</div>
+    <h1>具身大脑这两年:VLA 收敛、数据饥渴与评测危机</h1>
+    <p class="article-sub">
+      2024–2026 具身智能全景:技术路线收敛到哪了、数据和评测到底缺什么、
+      Google / OpenAI / Anthropic / NVIDIA / PI 与智元 / 银河通用 / 字节 / 阿里 / 腾讯 / 宇树各自走到哪一步。
+    </p>
+    <div class="article-meta">
+      <span class="pill">具身智能</span>
+      <span class="pill green">VLA · 世界模型 · Benchmark</span>
+      <span>📅 2026-09-18</span>
+      <span>⏱ 约 35 分钟</span>
+      <span>📄 基于 ~90 次公开资料检索,所有数字附来源</span>
+    </div>
+    <div class="abstract">
+      <strong>阅读指南:</strong>本文回答四个问题——① 这两年具身工作都是怎么做的(技术路线);② 到底缺在哪里,
+      需要什么样的数据、什么样的 benchmark;③ 「VLM 具身大脑」各家进度如何(OpenAI、Anthropic、Google,
+      以及国内 Qwen/阿里、字节、腾讯等);④ 2026 年往后看什么。
+      <strong>口径说明:</strong>凡厂商自报数字均标注「自报」,未能核实的说法集中列在第 9 节;
+      引用请以原始论文/官方博客为准。
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <!-- 目录(桌面) -->
+  <aside class="toc" id="toc"></aside>
+
+  <article class="art">
+    <!-- 目录(移动端) -->
+    <details class="toc-details">
+      <summary>📑 本文目录</summary>
+      <div id="toc-mobile"></div>
+    </details>
+
+    <!-- ========== 1. 总览 ========== -->
+    <h2 id="sec-tldr">1 · 总览:四个核心判断</h2>
+    <p class="body-p">
+      先把结论放前面。过去两年(2024-01 ~ 2026-09)具身智能从「RT-2 刚证明 VLM 能出动作」
+      走到了「人形机器人进厂进家试点」,四件事值得记住:
+    </p>
+    <div class="statband">
+      <div class="stat"><b>~30 万小时</b><span>全球机器人操作数据估计,vs LLM 文本 300 万亿 token</span></div>
+      <div class="stat"><b>0–5.5%</b><span>Claude 直接控制机械臂成功率(Anthropic 自测)</span></div>
+      <div class="stat"><b>79% vs 49%</b><span>VSI-Bench 空间智能:人类 vs 当时最强模型</span></div>
+      <div class="stat"><b>5000 台</b><span>智元 2025-12 量产下线,国产本体规模之最</span></div>
+    </div>
+    <div class="ceagrid">
+      <div>
+        <b class="t">① 技术已收敛</b>
+        <p>路线之争基本结束:<strong>VLA 是主干</strong>(action 从离散 token 收敛到 flow-matching/diffusion 专家),
+        <strong>分层「慢脑+快手」是人形场景事实标准</strong>(Helix、GR00T、GO-1、Gemini Robotics 全是双系统),
+        <strong>世界模型退居数据引擎与规划层</strong>,不再当控制器。</p>
+      </div>
+      <div>
+        <b class="t">② 卡脖子的是数据不是算法</b>
+        <p>缺口 3–6 个数量级,且是<strong>结构性</strong>的:只有成功演示没有失败轨迹、没有触觉力觉、
+        人视频与机器人视角对不齐、license 碎片化。2026 年的分水岭是谁先跑通
+        <strong>「部署→收失败→自动标注→更新」的数据飞轮</strong>。</p>
+      </div>
+      <div>
+        <b class="t">③ 评测处于危机状态</b>
+        <p>仿真三巨头被刷穿(LIBERO 高分在物体移动 2cm 后归零)、真机无统一协议、
+        成功率各家自报不可比。最深刻的发现来自 EmbodiedBench:很多高层任务上
+        <strong>去掉视觉输入分数不降</strong>——VLM 在「看见但不用」地蒙答案。</p>
+      </div>
+      <div>
+        <b class="t">④ 空间感知是公共瓶颈</b>
+        <p>VSI-Bench(人 79% vs 模型 49–69%)、MMSI-Bench(人 97% vs GPT-5 40%)、
+        PerceptionBench(无模型过 60%,幻觉最弱)三份独立证据指向同一结论:
+        <strong>大脑的眼睛跟不上嘴和手</strong>。</p>
+      </div>
+    </div>
+
+    <!-- ========== 2. 大事记 ========== -->
+    <h2 id="sec-timeline">2 · 两年大事记(2024-01 → 2026-09)</h2>
+    <p class="sec-intro">按时间轴看重心的三次迁移:通用 VLA 首战(2024)→ 泛化、端侧、脑身分离(2025)→ RL 自改进与全身控制(2026)。</p>
+    <table class="tbl">
+      <tr><th>时间</th><th>事件</th><th>为什么重要</th></tr>
+      <tr><td>2024-01</td><td>Mobile ALOHA(斯坦福)</td><td>$32K 双臂移动遥操作,低成本数据采集范式</td></tr>
+      <tr><td>2024-03</td><td>Covariant RFM-1(8B)</td><td>仓储机器人的「物理因果 token 化」早期尝试;团队 8 月被 Amazon 收编</td></tr>
+      <tr><td>2024-05</td><td>OpenAI 重启机器人团队</td><td>2021 年解散后回归,但至今未发布任何机器人模型</td></tr>
+      <tr><td>2024-06</td><td>OpenVLA 开源(7B)</td><td>首个全开放 VLA,声称超 55B 的 RT-2-X 16.5%(自报)</td></tr>
+      <tr><td>2024-10</td><td><strong>π0</strong>、GR-2、RDT-1B、AgiBot World</td><td>flow-matching action expert 登场;视频预训练路线;百万级真机数据集</td></tr>
+      <tr><td>2024-12</td><td>VSI-Bench(NYU 谢赛宁等)</td><td>首个视频空间智能基准:人类 79.2% vs 最强模型 48.8%</td></tr>
+      <tr><td>2025-02</td><td>Figure 弃 OpenAI 转自研,发布 <strong>Helix</strong></td><td>「端到端必须垂直整合」;双系统 S2(7-9Hz)+S1(200Hz) 成范式</td></tr>
+      <tr><td>2025-03</td><td><strong>Gemini Robotics / ER</strong>、智元 <strong>GO-1</strong>、NVIDIA <strong>GR00T N1</strong></td><td>三巨头同月进场;ViLLA 把 latent planner 放进 VLA</td></tr>
+      <tr><td>2025-04</td><td>π0.5</td><td>「开放世界泛化」:未见过的真实家庭里做长程任务(自报)</td></tr>
+      <tr><td>2025-06</td><td>V-JEPA 2、GR00T N1.5、RoboArena</td><td>latent 世界模型零样本抓取;真机 A/B 评测的第一次认真尝试</td></tr>
+      <tr><td>2025-07</td><td>字节 GR-3、腾讯 Tairos、RoboBrain 2.0、Skild Brain</td><td>国内「大脑」供给方集中亮相</td></tr>
+      <tr><td>2025-08</td><td>Genie 3 世界模型</td><td>实时交互 720p 世界生成,具身训练环境的远期想象</td></tr>
+      <tr><td>2025-09</td><td>Gemini Robotics 1.5、WALL-OSS、字节 Robix、智元 GO-1 开源</td><td>「先思考后行动」双模型;开源大脑元年</td></tr>
+      <tr><td>2025-10</td><td>Figure 03、1X NEO 预售($20,000)</td><td>人形进家庭的第一批商业答卷;WSJ 揭 NEO 复杂家务仍靠遥操作</td></tr>
+      <tr><td>2025-11</td><td>π*0.6(RECAP)</td><td>RL 自改进:咖啡机连续运行 13+ 小时,失败率减半(自报)</td></tr>
+      <tr><td>2025-12</td><td>智元第 5000 台量产下线</td><td>国产本体规模化标志</td></tr>
+      <tr><td>2026-01</td><td>蚂蚁 LingBot-VLA、千寻 Spirit v1.5 开源</td><td>中国开源 VLA 开始在公开榜单反超 π0.5</td></tr>
+      <tr><td>2026-02</td><td><strong>阿里 RynnBrain 1.0</strong>(达摩院)</td><td>首个 30B-A3B MoE 具身大脑,时空记忆;基于 Qwen3-VL</td></tr>
+      <tr><td>2026-07</td><td><strong>Gemini Robotics 2</strong>、RynnBrain 1.1(122B)、<strong>PerceptionBench</strong>(Moonshot)</td><td>全身控制;原子视觉感知基准:16 个前沿模型无一过 60%</td></tr>
+      <tr><td>2026-09</td><td>宇树 UnifoLM-WLA-1.0 开源</td><td>本体公司自研大脑:World-Language-Action 融合,端侧 106ms</td></tr>
+    </table>
+    <p class="tbl-src">整理自各官方博客/论文,链接见第 10 节参考资料。</p>
+
+    <!-- ========== 3. 技术路线 ========== -->
+    <h2 id="sec-routes">3 · 怎么做:三条路线与 2026 年的收敛</h2>
+    <p class="sec-intro">端到端 VLA、分层大小脑、世界模型——2026 年它们不是三选一,而是融合成同一个栈。</p>
+
+    <h3>3.1 端到端 VLA:action 表示的两次迭代</h3>
+    <p class="body-p">
+      VLA 的思想实验由 RT-2(2023-07)完成:把连续动作离散成 256 个 bin、借用语言词表输出,
+      web 数据和机器人数据 co-fine-tune,<strong>未见过的 emergent 技能 62% vs RT-1 的 32%</strong>——
+      「web 知识可以迁移到控制」从此成立(数字来自 Google 论文)。之后的两年是 action 表示的两代演进:
+    </p>
+    <div class="flow">
+      <div class="fstep"><b>第一代:离散 token</b><span>RT-2 / OpenVLA(2023–24)<br>简单,但精度粗、高频控制难</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>第二代:diffusion / flow-matching 专家</b><span>π0 / CogACT / RDT-1B / GR-3(2024–25)<br>VLM 出「认知」,小扩散头出连续动作块</span></div>
+      <div class="farrow">→</div>
+      <div class="fstep"><b>第三代:RL 后训练</b><span>π*0.6 RECAP / GR-RL(2025–26)<br>模仿学习 OOD 卡死后的自我改进</span></div>
+    </div>
+    <table class="tbl">
+      <tr><th>代表工作</th><th>日期</th><th>一句话</th><th>关键数字(口径)</th></tr>
+      <tr><td>OpenVLA(Stanford)</td><td>2024-06</td><td>7B 全开放,DINOv2+SigLIP+Llama2,97 万 OXE episodes</td><td>29 任务超 RT-2-X 16.5%(自报)</td></tr>
+      <tr><td>π0(Physical Intelligence)</td><td>2024-10</td><td>PaliGemma 3B + ~300M flow-matching 动作专家,1 万小时跨本体数据</td><td>叠衣/装盒等灵巧任务 demo;参数量未披露</td></tr>
+      <tr><td>CogACT(清华+MSRA)</td><td>2024-11</td><td>VLM 出 cognition token,Diffusion Transformer 出动作</td><td>SimplerEnv visual matching <strong>74.8% vs OpenVLA 34.3%</strong></td></tr>
+      <tr><td>RDT-1B(清华)</td><td>2024-10</td><td>1.2B Diffusion Transformer,46 数据集 100 万+ episodes</td><td>双臂任务平均成功率超基线 56%(自报)</td></tr>
+      <tr><td>SpatialVLA(上海 AI Lab)</td><td>2025-01</td><td>Ego3D 位置编码 + 自适应动作网格,110 万真机 episodes</td><td>SimplerEnv zero-shot 81.0%(自报)</td></tr>
+      <tr><td>GR-3(字节 Seed)</td><td>2025-07</td><td>Qwen2.5-VL-3B + flow-matching DiT,VL 联合训练</td><td>未见指令 <strong>77.1% vs π0 40%</strong>(自报)</td></tr>
+      <tr><td>SmolVLA(Hugging Face)</td><td>2025-06</td><td>450M 小模型 + 3 万社区 episodes,单卡可训</td><td>声称与 10× 大模型相当(自报)</td></tr>
+    </table>
+    <p class="tbl-src">链接见第 10 节。注意除 SimplerEnv 外多数数字无第三方复现。</p>
+
+    <h3>3.2 分层「大脑/小脑」:人形场景的事实标准</h3>
+    <p class="body-p">
+      高频控制等不起大模型推理(Claude 推理 ~0.2–0.4Hz,而直接关节控制需 ~83Hz——Anthropic 实测),
+      于是「慢脑规划 + 快手执行」成为人形与双臂场景的统一答案:
+    </p>
+    <ul>
+      <li><strong>Figure Helix</strong>(2025-02):S2 = 7B VLM(7–9Hz)输出 latent,S1 = 80M 视觉运动策略(200Hz),单组权重控 35 自由度上半身;2026-01 Helix 02 再加 S0(1kHz 全身控制,替换 10.9 万行手写 C++)。<strong>无任何标准 benchmark 数字</strong>,只有 demo。</li>
+      <li><strong>NVIDIA GR00T N1</strong>(2025-03):S2 = Eagle-2 VLM(1.34B,~10Hz),S1 = DiT + flow-matching(~120Hz),全开放权重;78 万条 Isaac Sim 合成轨迹,合成+真机比纯真机 +40%(自报)。</li>
+      <li><strong>智元 GO-1(ViLLA)</strong>(2025-03):VLM(InternVL-2B)+ Latent Planner(从人类视频无监督学 Latent Action Tokens)+ Diffusion Action Expert;<strong>平均成功率 46%→78%,其中 Latent Planner 单项 +12%</strong>(自报);2025-09 开源。</li>
+      <li><strong>Gemini Robotics-ER</strong>(2025-03):Google 的「外置脑」——2D pointing、3D 检测、抓取点、轨迹规划,可接任意低层控制器;ER 1.5(2025-09)经 Gemini API 公开。</li>
+      <li><strong>字节 Robix</strong>(2025-09):李航带队,基于 Qwen2.5-VL 的高层认知层(2000 亿 token 三阶段训练),低层交 VLA 执行;真机任务完成率 92.6%(自报,Gemini 2.5 Pro 91.0%、GPT-4o 64.3%)。</li>
+    </ul>
+    <p class="body-p">
+      两系统的<strong>接口</strong>没有共识:Helix 用 latent,GO-1 用 latent action tokens,Robix/ER 偏向文本与结构化指令。
+      高层错误会级联到小脑,而高层「大脑」本身的空间推理短板(第 8 节)直接封顶整个系统。
+    </p>
+
+    <h3>3.3 世界模型:从「当控制器」退到「造数据、做规划」</h3>
+    <p class="body-p">
+      UniPi(2023)的「先生成计划视频、再逆推动作」原教旨路线,因像素生成太贵太慢基本被放弃。
+      但它的思想分化成两个真正落地的角色:
+    </p>
+    <ul>
+      <li><strong>数据引擎</strong>:NVIDIA Cosmos(2000 万小时视频训练)+ GR00T-Mimic/Dreams 管线,<strong>11 小时生成 78 万条合成轨迹 ≈ 6500 小时人类演示</strong>(NVIDIA 自报),GR00T N1 合成+真机提升 40%,N1.5 开发周期从 ~3 个月缩到 ~36 小时(自报);银河通用 GraspVLA 用 <strong>10 亿帧纯合成数据</strong>预训练,sim2real 直迁零样本抓取 ~90%、透明物体 86.6%(AnyGrasp 仅 10%,论文数字)。</li>
+      <li><strong>latent 规划器</strong>:Meta V-JEPA 2(2025-06,LeCun 路线)——1.2B JEPA 预测 latent 而非像素,100 万+ 小时视频 + <strong>仅 62 小时</strong> DROID 机器人数据,真实 Franka 未见环境零样本抓取 65–80%(自有设置),规划耗时 16 秒 vs Cosmos 类方案 4 分钟。</li>
+    </ul>
+    <p class="body-p">
+      2026 年的新信号是 1X 正式成立 World Model Lab 并放话「fine-tune 不出 AGI」——
+      世界模型作为<strong>自我改进机制</strong>(生成视频学新任务)的赌局仍在加码;
+      而 Genie 3(2025-08)展示了实时交互世界生成的上限,但尚未接机器人控制。
+    </p>
+
+    <h3>3.4 收敛之后,各自未解决的问题</h3>
+    <table class="tbl">
+      <tr><th>路线</th><th>未解决的核心问题</th></tr>
+      <tr><td>端到端 VLA</td><td>长时序误差累积与失败恢复弱;纯模仿学习 OOD 卡死;依赖昂贵真机数据;成功率自报不可比</td></tr>
+      <tr><td>分层架构</td><td>系统间接口(latent/文本/waypoint)无共识;高层错误级联;大脑空间推理短板封顶</td></tr>
+      <tr><td>世界模型</td><td>像素生成成本高、物理一致性(接触/摩擦)弱;作为控制器未验证;作为评测环境无协议</td></tr>
+      <tr><td>共同</td><td>人类视频/失败数据变不成监督信号(缺 retargeting 与奖励接口);数据飞轮没人完全跑通</td></tr>
+    </table>
+
+    <!-- ========== 4. 海外进度 ========== -->
+    <h2 id="sec-overseas">4 · 海外进度:OpenAI 零模型,Anthropic 只评测,Google 全栈</h2>
+    <p class="sec-intro">直接回答「Claude 他们、GPT 他们做到哪了」:两家大模型公司在具身上都还没有模型产品,但姿态完全不同。</p>
+
+    <h3>4.1 Google DeepMind:唯一全栈玩家</h3>
+    <p class="body-p">
+      模型线四代同堂:<strong>Gemini Robotics / ER</strong>(2025-03,arXiv:2503.20020)→
+      <strong>On-Device</strong>(2025-06,首个纯端侧 Gemini VLA,ALOHA/Franka/Apollo,50–100 条演示适配)→
+      <strong>1.5 / ER 1.5</strong>(2025-09,双模型「先思考后行动」,ER 1.5 当天起 API 开放)→
+      <strong>2 / ER 2 / On-Device 2</strong>(2026-07,全身控制+五指手,ER 2 支持连续视频理解与多机协作)。
+      配套:Genie 3 世界模型、ASIMOV 安全评测集、Apptronik/Boston Dynamics/Agility 合作。
+    </p>
+    <div class="warn">
+      <strong>⚠️ 注意 Google 的评测口径。</strong>ER 1.5 宣称的「15 个 benchmark 聚合分超 60、领先 GPT-5」,
+      那 15 个 bench(Point-Bench、RefSpatial、RoboSpatial、Where2Place、BLINK、CV-Bench、ERQA、EmbSpatial、
+      MindCube、SAT、Cosmos-Reason1、OpenEQA、VSI-Bench 等)<strong>全是感知/认知层,没有一个是动作成功率</strong>;
+      而 GR 2 的「拧灯泡 92%」是单任务演示数字。感知套件 + 单任务演示的组合拳,正是「评测混乱」的高级形态——
+      它比同行认真,但仍不可横向比较。
+    </div>
+
+    <h3>4.2 OpenAI:零机器人模型,用钱和「规划脑 API」维持存在</h3>
+    <ul>
+      <li>2024-05 重启机器人团队,2024-11 聘 Meta AR 硬件负责人 Kalinowski 主管;<strong>2026-03 Kalinowski 辞职(后加入 Anthropic)</strong>。两年间无模型发布。</li>
+      <li>与 Figure 的合作(2024-02,$675M 轮)以 Figure 2025-02 宣布「机器人 AI 必须垂直整合,不能外包」告终——这是「大模型当外置脑」路线最响的一次耳光,也直接催生了 Helix。</li>
+      <li>资本存在:OpenAI 创业基金 2023 领投 1X($23.5M)、参投 Physical Intelligence(2024-11,$400M 轮)。</li>
+      <li>GPT 系在机器人里的实际角色:Figure 01 的语音对话、1X NEO 的语音交互,以及被各家当真机对照组(Robix:GPT-4o 64.3% vs Robix-32B 92.6%,字节自报)。</li>
+    </ul>
+
+    <h3>4.3 Anthropic:零机器人模型,但贡献了全行业最诚实的自测</h3>
+    <ul>
+      <li><strong>Project Fetch</strong>(Phase 1,2025-11):非机器人专家用 Claude 给 Unitree Go2 编程取物,完成时间约为对照组一半,但 Claude 无法独立完成任务;Phase 2(2026 年中):Opus 4.7 在 Claude Code 中自主运行,比最快人类组快约 20 倍,<strong>但闭环物理控制(精确推球)仍失败</strong>。</li>
+      <li><strong>「How Claude performs on robotics tasks」</strong>(2026-07,Frontier Red Team):MuJoCo 经典控制 + 真机行走 + Franka LIBERO 操作。直接关节控制成功率 <strong>0–5.5%</strong>;模型推理 ~0.2–0.4Hz vs 直接控制所需 ~83Hz;<strong>接入监督训练 VLA + 光标工具后操作成功率 6%→32%</strong>;官方结论:「模型学的是特定动作序列,还不是通用规划器」。</li>
+      <li>2026 年 OpenAI 前机器人负责人 Kalinowski 加入,方向未公开。Anthropic 的姿态很清楚:不做 VLA,但把「通用 LLM 离机器人有多远」量化给全行业看。</li>
+    </ul>
+
+    <h3>4.4 NVIDIA:卖铲人的完整闭环</h3>
+    <p class="body-p">
+      芯片(Jetson Thor)+ 仿真(Isaac Sim/Lab)+ 世界模型数据工厂(Cosmos)+
+      开放基座(GR00T N1→N1.5→N1.7,2026 年 N1.7 号称首个 Apache 2.0 商用许可)。
+      GR00T N1.5 自报真机语言跟随 46.6%→93.3%、总成功率 43.3%→83.0%(GR-1 自有设置)。
+      「把数据问题变成算力问题」是这条路线的核心赌注。GR00T N2 的状态传言不一(本文标注未能核实)。
+    </p>
+
+    <h3>4.5 Physical Intelligence / Figure / 1X / 其他</h3>
+    <table class="tbl">
+      <tr><th>公司</th><th>走到哪了</th><th>可信度备注</th></tr>
+      <tr><td><strong>Physical Intelligence</strong></td><td>π0(2024-10)→ π0.5(2025-04,未见家庭泛化)→ π*0.6(2025-11,RECAP 优势条件化 RL,咖啡机连续 13+ 小时、最难任务吞吐翻倍、失败率减半)</td><td>数字全部自有任务集;但论文方法透明、且 2025-02 起开源(openpi)。融资 $2.4B→$5.6B 估值,2026 传 ~$11B</td></tr>
+      <tr><td><strong>Figure</strong></td><td>Helix(2025-02,S2 7-9Hz+S1 200Hz,全端侧)→ Helix 02(2026-01,全身);Figure 03(2025-10,掌内相机+指尖触觉,BotQ 1.2 万台/年产能目标)</td><td><strong>无任何 benchmark 数字</strong>;BMW「3 万辆车、9 万零件」被 Fortune 调查质疑夸大(实际 1 台、初期非生产时段)</td></tr>
+      <tr><td><strong>1X</strong></td><td>NEO Gamma(2025-02)→ Redwood 端侧 VLA(2025-06)→ NEO 家用预售(2025-10,$20K 或 $499/月,2026 交付)→ World Model Lab(2026-06)</td><td>WSJ 实测:复杂家务仍依赖「Expert Mode」远程遥操作;「数百至数千户家庭测试」为计划口径,完成数未核实</td></tr>
+      <tr><td><strong>Skild AI</strong></td><td>Skild Brain(2025-07,omni-bodied 单模型跨四足/人形/臂,万亿级仿真 episode)</td><td>「数小时数据达 60–80% 任务表现」为自报;2026-01 $14 亿 C 轮 @ $140 亿</td></tr>
+      <tr><td><strong>Field AI</strong></td><td>户外场景「物理优先」基础模型,建筑/能源/物流巡检已部署(2025-08,$405M 融资)</td><td>少数宣称有真实商业收入的;数字未审计</td></tr>
+      <tr><td><strong>Covariant</strong></td><td>RFM-1(2024-03)后,2024-08 被 Amazon「反向收购式」收编,独立公司沉寂</td><td>—</td></tr>
+      <tr><td><strong>Tesla Optimus</strong></td><td>V3(全新手部)从 2025 推迟至 2026 Q1;Musk 承认初期生产极慢</td><td>无论文、无 benchmark,纯发布会口径</td></tr>
+    </table>
+
+    <!-- ========== 5. 国内进度 ========== -->
+    <h2 id="sec-china">5 · 国内进度:Qwen 是隐形底座,开源大脑进入第一梯队</h2>
+    <p class="sec-intro">直接回答「Qwen 他们进度如何」——分两层:阿里自己下场(RynnBrain),和全行业把 Qwen-VL 当基座。</p>
+
+    <div class="note">
+      <strong>💡 Qwen 系在具身的真实位置(重点):</strong>阿里<strong>没有</strong>「Qwen 品牌」的具身模型;
+      具身大脑由达摩院承载,即 <strong>RynnBrain</strong> 系列,明确基于 Qwen3-VL 训练。
+      1.0(2026-02)一口气开源 7 个模型(2B/8B 稠密 + 业界首个 30B-A3B MoE + Plan/Nav/CoP 专有模型),
+      两大特色:<strong>时空记忆</strong>(任务被打断后回溯续做)与<strong>物理空间推理</strong>(文本与空间定位交错),
+      宣称 16 项具身评测 SOTA(自报口径,超 Gemini Robotics ER 1.5、Cosmos Reason 2);
+      1.1(2026-07,arXiv:2607.17977)上探 <strong>122B-A10B</strong>(首个 122B 级稀疏 MoE 具身大脑),
+      在 VSI-Bench/MMSI/RefSpatial-Bench 领先参测模型,RynnBrain-VLA 已部署宇树 G1、Astribot S1、天工等真机。
+      另一层更隐蔽:<strong>Qwen2.5/3-VL 是行业 VLA 事实标准基座</strong>——字节 GR-3、字节 Robix、
+      蚂蚁 LingBot-VLA、BAAI RoboBrain 2.0 全部基于 Qwen2.5-VL;DexVLA 基于 Qwen2-VL;
+      NVIDIA LocateAnything 的语言侧也是 Qwen2.5-3B。Qwen3-VL 自身在空间基准的官方口径:
+      VSI-Bench 60.0、EmbSpatial 84.3、RefSpatial 69.9。
+    </div>
+
+    <h3>5.1 模型公司(大脑+本体全栈)</h3>
+    <table class="tbl">
+      <tr><th>公司</th><th>大脑</th><th>落地/资本</th></tr>
+      <tr><td><strong>智元 AgiBot</strong></td><td>GO-1 / ViLLA(2025-03,2025-09 开源):Latent Planner 从人类视频学潜动作;平均成功率 46%→78%(自报);AgiBot World 100 万轨迹数据集(CC BY-NC-SA)</td><td>2025-12 第 <strong>5000 台</strong>量产下线;2026-07 启动港股 IPO</td></tr>
+      <tr><td><strong>银河通用 Galbot</strong></td><td>GraspVLA(2025-05):10 亿帧纯合成抓取数据预训练,sim2real 直迁;GroceryVLA;TrackVLA/++(移动操作+推理记忆)</td><td>智慧药房全国首张牌照、无人店 100+;宁德/博世订单;2026-03 获 25 亿国家 AI 基金,估值超 200 亿</td></tr>
+      <tr><td><strong>自变量 X Square</strong></td><td>WALL-A(2024-10,纯端到端少数派)→ WALL-OSS(2025-09 开源,4.2B)→ Wall-OSS-0.5(2026-05,主打「预训练即可部署」,17 个零样本任务)</td><td>美团独家 A 轮;量子 2 号本体</td></tr>
+      <tr><td><strong>智平方 AI2</strong></td><td>GOVLA(全域全身 VLA),前身 RoboMamba(NeurIPS 2024)</td><td>惠科 3 年 1000 台近 5 亿订单;2026-06 估值破 200 亿</td></tr>
+      <tr><td><strong>星动纪元</strong></td><td>ERA-42(2024-12):7B VLM 规划 + 40M 动作策略,推理 &lt;100ms,全身 55 自由度 + XHAND1 灵巧手</td><td>订单破 5 亿;2026 年累计融资近 50 亿</td></tr>
+      <tr><td><strong>千寻智能 Spirit AI</strong></td><td><strong>Spirit v1.5</strong>(2026-01 开源):RoboChallenge Table30 综合 66.09 / 成功率 50.33%,<strong>反超 π0.5 的 58.7 / 42.67%</strong>——中国开源 VLA 首次在公开榜单赢 PI;累计 20 万+ 小时真机数据</td><td>Moz1 进宁德产线(宣称成功率 99%);京东/华为哈勃投资,2026-02 估值破百亿</td></tr>
+      <tr><td><strong>星海图 Galaxea</strong></td><td>G0(2025-08 开源)→ G0.5(2026-06,自回归架构零样本,宣称刷新 7 大榜单)+ Fast-WAM 世界模型</td><td>R1 本体供货斯坦福/PI/华为;GOD 数据集下载 60 万+;估值破 200 亿</td></tr>
+      <tr><td><strong>蚂蚁灵波</strong></td><td><strong>LingBot-VLA</strong>(2026-01 开源,Qwen2.5-VL 基座,2 万小时真机)→ 2.0(2026-07,6 万小时,1.6B 稀疏 MoE,覆盖 20 构型 17 品牌,宣称超 π0.5 与 GR00T N1.7)</td><td>蚂蚁集团全栈(LingBot-Depth/Map/World/Video)</td></tr>
+    </table>
+
+    <h3>5.2 大厂与研究院「大脑」供给方</h3>
+    <table class="tbl">
+      <tr><th>供给方</th><th>进展</th></tr>
+      <tr><td><strong>字节 Seed</strong></td><td>GR-2(2024-10,3800 万视频片段预训练)→ GR-3(2025-07,未见指令 77.1% vs π0 40%,自报)→ Robix(2025-09,李航带队高层认知脑,真机 92.6% vs GPT-4o 64.3%,自报)</td></tr>
+      <tr><td><strong>腾讯 Robotics X</strong></td><td>Tairos 平台(2025-07,不做整机,左右脑/小脑三模型,宣称长序列任务 80%)→ HY-Embodied 三件套开源(2026 WAIC:30B MoE VLM + 62B 世界认知模型 + VLA-0.5 日化工厂成功率 &gt;95% 自报)</td></tr>
+      <tr><td><strong>BAAI 智源</strong></td><td>RoboBrain 2.0(2025-07 开源 7B/32B,Qwen2.5-VL 初始化):BLINK-Spatial 83.95(7B 超 Gemini 2.5 Pro)、RoboSpatial 72.43(32B);配 RoboOS 2.0 跨本体框架与 EmbodiedVerse 评测体系</td></tr>
+      <tr><td><strong>上海 AI Lab</strong></td><td>Intern·Utopia 仿真(原 GRUtopia)+ InternVLA 三件套(M1 操作大脑 / N1 第一视角导航 60Hz / A1 操作小脑,宣称优于 π0 与 GR00T N1.5,自报);SpatialVLA 出自这里</td></tr>
+      <tr><td><strong>华为</strong></td><td>不做本体:CloudRobo(2025-06,盘古基座,80% 数据靠生成)+ R2C 协议 + 深圳创新中心;哈勃投资千寻</td></tr>
+    </table>
+
+    <h3>5.3 本体公司的大脑尝试与其他</h3>
+    <p class="body-p">
+      <strong>宇树</strong>是本体公司里自研大脑最激进的:UnifoLM 系列从 WMA-0(2025-09 开源世界模型-动作)
+      到 <strong>WLA-1.0</strong>(2026-09-10 开源,~6B,2500 小时真机数据、64 任务、端侧 106ms);
+      本体 G1/R1/H2 覆盖 3 万到 20 万价位,A 股 IPO 注册 2026-07 生效。
+      <strong>优必选</strong>走 BrainNet 群脑路线(超级大脑基于 DeepSeek-R1,非自研 VLA 基座),Walker S2 自主换电、
+      极氪工厂数十台协同;<strong>逐际/松延/众擎</strong>以本体与运控为主(众擎 2026 发布五层仿人脑引擎,宣称 2 小时微调长程 98%+,自报)。
+    </p>
+    <p class="body-p">
+      <strong>国内格局判断:</strong>与海外「模型公司 vs 本体公司」分工不同,国内是
+      <strong>模型+本体+场景全栈内卷</strong>——智元同时有 GO-1、AgiBot World、5000 台本体和 IPO;
+      银河通用同时有 GraspVLA、药房和宁德产线。开源激进度显著高于海外(GO-1、RynnBrain、
+      WALL-OSS、Spirit v1.5、LingBot、RoboBrain、UnifoLM 全部开源),
+      而药房/工厂/产线的<strong>落地密度恰恰是数据飞轮最稀缺的原料</strong>——这是国内路线的真实底气,
+      短板则在 frontier 基座模型能力(多数大脑仍站在 Qwen/InternVL 肩上,而非自研基座)。
+    </p>
+
+    <!-- ========== 6. 数据 ========== -->
+    <h2 id="sec-data">6 · 数据:缺的不只是量,是结构</h2>
+    <div class="statband">
+      <div class="stat"><b>~30 万 h</b><span>全球机器人操作数据估计(Bessemer 2026)</span></div>
+      <div class="stat"><b>&lt;5000 h</b><span>开源真实交互数据</span></div>
+      <div class="stat"><b>0.1%–1%</b><span>相当于前沿所需量的比例</span></div>
+      <div class="stat"><b>10 亿 h</b><span>对比:互联网视频量级</span></div>
+    </div>
+    <h3>6.1 现有数据池:两个百万级,但都有「但是」</h3>
+    <table class="tbl">
+      <tr><th>数据集</th><th>规模</th><th>但是</th></tr>
+      <tr><td>Open X-Embodiment(2023-10)</td><td>100 万+ 轨迹、22 种本体、527 技能</td><td><strong>~65% 轨迹集中在 Franka+WidowX 两种臂</strong>;质量异构;各子集 license 各自为政</td></tr>
+      <tr><td>AgiBot World(智元,2024-12)</td><td>1,001,552 轨迹、2976 小时、217 任务、5 大真实场景</td><td>单一本体、单一 4000㎡ 数采工厂;<strong>CC BY-NC-SA 禁商用</strong></td></tr>
+      <tr><td>DROID(2024-03)</td><td>7.6 万轨迹、350h、564 场景、50 采集者</td><td>单一本体(Franka),但 <strong>CC-BY 4.0 可商用</strong>——是 OpenVLA/π0/Octo 的标准预训练语料</td></tr>
+      <tr><td>RH20T(2023)</td><td>11 万+ 轨迹</td><td>少数含力/力矩信号的,但力觉字段利用率低</td></tr>
+    </table>
+    <h3>6.2 四个结构性缺口</h3>
+    <ul>
+      <li><strong>只有成功,没有失败</strong>:主流数据集全是专家演示;Eval-Actions(2026-01)专门收 2.8K 条失败轨迹才成新闻。没有失败,RL 自改进和「恢复」能力就没有监督来源——π*0.6 的 RECAP 本质就是在自产失败信号。</li>
+      <li><strong>没有触觉/力觉</strong>:OXE/DROID/AgiBot 主体均无;Figure 03 把指尖触觉(3g 力感知)当卖点,恰说明它是稀缺品。</li>
+      <li><strong>人视频对不齐机器人视角</strong>:人手与机械臂的形态差、2D 视频恢复 3D 运动之难,使「拿 YouTube 教机器人」至今主要靠掩码/重定向技巧(EgoMimic、H2R 用渲染机械手替换真人手,成功率 +5–23%)。</li>
+      <li><strong>License 碎片化</strong>:DROID 可商用、AgiBot NC、Ego4D 研究专用、OXE 子集各自为政——2026 年「数据护城河」讨论升温,合规可用的数据比公开数据少得多。</li>
+    </ul>
+    <h3>6.3 三条补数路线</h3>
+    <div class="ceagrid">
+      <div>
+        <b class="t">便携采集(无机器人采数)</b>
+        <p>UMI(手持夹爪+GoPro+SLAM):~111 demos/h,3 倍于 ALOHA 遥操作;Fast-UMI 去 SLAM 依赖;DexCap 专攻灵巧手。本质:把「人」变成移动数采终端。</p>
+      </div>
+      <div>
+        <b class="t">合成数据(数据问题变算力问题)</b>
+        <p>MimicGen:200 条演示→5 万条;GraspVLA SynGrasp-1B:10 亿帧纯合成、sim2real 直迁 ~90%;NVIDIA Cosmos/GR00T-Dreams:11 小时造 78 万条轨迹(自报)。NVIDIA 路线的核心赌注。</p>
+      </div>
+      <div>
+        <b class="t">人视频预训练</b>
+        <p>GR-2:3800 万互联网视频片段做视频预测预训练再微调动作;VPP 同类;GO-1 的 Latent Planner 从人类视频无监督学潜动作。利用的是唯一「无限」的数据源。</p>
+      </div>
+    </div>
+    <p class="body-p">
+      <strong>判断:</strong>三条路线都在验证中,但各自有解决不了的部分——合成数据解决不了触觉与接触物理,
+      人视频解决不了动作标签,便携采集解决不了规模。所以 2026 年的共识是
+      <strong>数据飞轮</strong>:部署真实本体 → 回收失败与边缘 case → 自动标注 → 回流训练。
+      谁先跑通,谁把「数据竞赛」变成「部署密度竞赛」——这也是智元 5000 台、银河通用 100+ 药店、
+      1X 家庭试点在战略上的真正含义。
+    </p>
+
+    <!-- ========== 7. Benchmark ========== -->
+    <h2 id="sec-bench">7 · Benchmark:一场三层评测危机</h2>
+    <p class="sec-intro">仿真层被刷穿、真机层没协议、感知/认知层刚起步且各自为政。看具身数字前先看他是在哪一层报的。</p>
+
+    <h3>7.1 仿真层:高分≈记忆</h3>
+    <table class="tbl">
+      <tr><th>Bench</th><th>地位</th><th>危机证据</th></tr>
+      <tr><td>LIBERO(2023)</td><td>VLA 论文标配;OpenVLA 76.5% → 2026 榜首 ~97%</td><td><strong>LIBERO-PRO(2025-10):95%+ 的模型在物体移动 2cm 后成功率归零</strong>;LIBERO-Plus:模型可完全无视语言指令——高分是记忆不是泛化</td></tr>
+      <tr><td>CALVIN(2022)</td><td>长程语言条件操作</td><td>环境单一、已被刷至近饱和,区分度消失</td></tr>
+      <tr><td>SimplerEnv(CoRL'24)</td><td>唯一系统验证「sim 排名能代表真机」:Pearson r = 0.93–0.96</td><td>只在 2 个硬件 setup 上验证过;对部分策略系统性高估/低估——但它仍是目前最负责任的评测方式</td></tr>
+      <tr><td>VLABench(2024-12)</td><td>组合长程+推理维</td><td>微调 VLA 极弱:Octo≈0、OpenVLA≈4.5、RDT-1B≈5.3;论文原话:「距 GPT-2 时刻都还远」</td></tr>
+    </table>
+
+    <h3>7.2 真机层:没有协议,RoboArena 是最认真的补丁</h3>
+    <p class="body-p">
+      真机评测的现状是「每家自定义任务自报成功率」:GR-2 报 105 任务 97.7%、GR00T N1.5 报 83.0%、
+      腾讯报日化工厂 &gt;95%、千寻报产线 99%——任务、本体、起始条件全不同,<strong>这些数字一个都不能横向比</strong>。
+      2025-06 的 <strong>RoboArena</strong>(类 Chatbot Arena:双盲 A/B、ELO 排名、0–100 部分进度分,
+      7 机构 600+ episodes)是目前最被认可的折中;2026 年两篇审计论文进一步指出:
+      跨论文引用头条数字的 setup 普遍不兼容、成功率差异的统计显著性普遍不达标、
+      二元成功率掩盖执行质量与「真自主还是遥控」的来源歧义。
+    </p>
+
+    <h3>7.3 感知/认知层:刚起步,但已有三个「皇帝新衣」级发现</h3>
+    <ul>
+      <li><strong>「看见但不用」</strong>(EmbodiedBench,2025-02):去掉视觉输入,MLLM 在高层任务上分数几乎不降(56.3→58.0),低层任务崩塌(57.7→17.4)——高层「具身推理」很多时候是靠文本先验蒙。</li>
+      <li><strong>「空间盲」</strong>(OpenEQA,CVPR'24):空间类问题上 VLM 与纯文本 LLM 打平;总分人类 85.9 vs GPT-4V 48.5。</li>
+      <li><strong>「协作鸿沟」</strong>(PARTNR,Meta 2024-11/2025-02):人机协作任务 AI ~30% vs 人类 93%,且 LLM 机器人与人搭档比双人组多耗 1.5 倍步数——少数公开可复现的人机对比。</li>
+    </ul>
+    <p class="body-p">
+      这一层的 bench 正在快速涌现:ERQA(Google 自建 400 题多选,首发 Gemini 2.0 Pro 48.3 / GPT-4o 47.0 /
+      Claude 3.5 Sonnet 35.5——注意「出题人即考生」)、EgoPlan-Bench、RoboVQA、
+      Where2Place/RoboPoint/RefSpatial 指向套件、SAT(动态空间)、VSI-Bench/MMSI-Bench(视频与多图空间)、
+      PerceptionBench(原子视觉感知,2026-07)。问题:任务定义各家不同,<strong>榜单之间不可比</strong>;
+      Google 把它们打包成 15-bench 聚合分,又引入了聚合口径的新问题。
+    </p>
+
+    <h3>7.4 一张表看清「成功率」的水分</h3>
+    <table class="tbl">
+      <tr><th>模型</th><th>报告数字</th><th>评测设置</th></tr>
+      <tr><td>Gemini Robotics(2025-03)</td><td>「泛化 2 倍于对手」</td><td>自建综合泛化测试,未公开</td></tr>
+      <tr><td>Gemini Robotics-ER 1.5</td><td>15 bench 聚合 &gt;60</td><td>学术 pointing/VQA 集聚合,不含动作成功率</td></tr>
+      <tr><td>Gemini Robotics 2</td><td>拧灯泡 92%</td><td>单任务演示</td></tr>
+      <tr><td>V-JEPA 2</td><td>65–80%</td><td>自有 Franka 抓取放置,零样本</td></tr>
+      <tr><td>GR00T N1.5</td><td>43.3%→83.0%</td><td>NVIDIA 自有 GR-1 真机任务组</td></tr>
+      <tr><td>π0.5 / π*0.6</td><td>缩放曲线 / 吞吐×2</td><td>自有任务集(方法透明,但非公共协议)</td></tr>
+      <tr><td>Helix / Redwood / Skild</td><td>无</td><td>仅 demo 视频与定性声称</td></tr>
+      <tr><td>Claude(Anthropic 自测)</td><td>直接控制 0–5.5%;监督 VLA 后 32%</td><td>LIBERO+MuJoCo+真机,方法透明</td></tr>
+      <tr><td>PARTNR</td><td>人 93% vs AI 30%</td><td>公开仿真 benchmark,可复现</td></tr>
+      <tr><td>千寻 Spirit v1.5</td><td>Table30 66.09 vs π0.5 58.7</td><td>公开协议 RoboChallenge,第三方可复现 ✅</td></tr>
+    </table>
+    <p class="tbl-src">规律:数字越惊艳,评测设置越私有;敢上公开协议的,数字都还很朴素。</p>
+
+    <!-- ========== 8. 解读:缺在哪 ========== -->
+    <h2 id="sec-gap">8 · 解读:到底缺在哪,需要什么样的 bench</h2>
+    <div class="think">
+      <h4>缺什么(按痛度排序)</h4>
+      <ul>
+        <li><strong>① 空间/3D 感知——所有路线的公共瓶颈。</strong>三份独立证据:VSI-Bench 人类 79.2% vs 当时最强 48.8%(2025 年 GPT-5 也才 55.0);MMSI-Bench 人类 97% vs GPT-5 40%;PerceptionBench 16 个前沿模型无一过 60%、幻觉是最弱项。
+        2026 年 Thinking with Spatial Code 给 4B LLM 接上真值 3D 空间编码后 VSI-Bench 直接到 73.2% 逼近人类——
+        <strong>说明瓶颈在「眼睛」的 3D 感知质量,不在「脑子」的容量</strong>。所有 VLA 的大脑都建立在这块短板上。</li>
+        <li><strong>② 数据——结构问题大于量级问题。</strong>量级差 3–6 个数量级是真,但更致命的是:没有失败轨迹、没有触觉、人视频对不齐、license 碎片化。合成数据补量不补结构。</li>
+        <li><strong>③ 评测协议——没有公共尺度的领域谈不上工程进步。</strong>仿真被刷穿、真机无协议、感知层各自为政;「看见但不用」证明没有对照设计的 benchmark 会被文本先验蒙混。</li>
+        <li><strong>④ 长程与失败恢复。</strong>Claude「学的是动作序列不是规划器」、LIBERO 高分 2cm 归零、VLABench 全军覆没——纯模仿学习的天花板已被反复撞见;RL 后训练(π*0.6/GR-RL)刚起步,缺的是失败数据与奖励接口。</li>
+        <li><strong>⑤ 本体接口。</strong>人类视频、失败数据、遥操作纠正都变不成监督信号:缺 retargeting、缺奖励定义、缺跨本体动作空间(GR-3/RDT 的统一动作空间是早期尝试)。</li>
+      </ul>
+      <h4>那需要什么样的 benchmark(我的主张)</h4>
+      <ul>
+        <li><strong>感知层:可观测、可下钻、防蒙。</strong>按「能力 × 内容域 × 难度」切片报告,而不是一个聚合分;题目带难度梯度(别把模型全做对的题扔掉,那是观测能力涌现的唯一窗口);minimal pair(只差一个视觉事实,两题都对才给分)防猜测;
+        每道错题归因 first error——<strong>看错图、想错了、还是题出错了</strong>。PerceptionBench 的设计(隔离推理只测「看」+ 重复提问拆穿「猜对」)是这条路上目前最认真的公开样本,它「无模型过 60%」的结论应当成为所有具身大脑厂商的必读。</li>
+        <li><strong>认知/规划层:单步可判 + 视觉事实标注 + 去视觉对照。</strong>每道题标注「关键视觉事实」的标准答案,模型答错时才分得清是事实读错还是推理错;EmbodiedBench 的「去掉视觉输入重测」应该成为所有具身 QA bench 的标配对照——分数不降的题全部作废。</li>
+        <li><strong>执行层:真机 A/B + 部分进度分 + 统计规范。</strong>RoboArena 模式(双盲、ELO、0–100 进度分)值得扩大;所有成功率必须带 n 与置信区间;失败轨迹像 Eval-Actions 一样公开。「某厂商在某任务集 95%」这类数字在 2026 年应当失去引用资格。</li>
+        <li><strong>给从业者的「看数字」建议:</strong>看第三方可复现的(SimplerEnv、RoboChallenge、RoboArena)、看人机差距(PARTNR、OpenEQA)、看消融(去视觉、去 co-training、扰动 2cm)——不看厂商私有任务集的单次成功率。</li>
+      </ul>
+      <h4>2026 往后,看什么</h4>
+      <ul>
+        <li><strong>数据飞轮竞赛</strong>:部署密度(智元 5000 台、银河通用药店、1X 家庭、Figure BotQ)→ 失败回流 → 自动标注。这是中国玩家结构性有利、也唯一能对冲 frontier 模型差距的赛道。</li>
+        <li><strong>RL 自改进</strong>:π*0.6 开了头,2026–27 的关键变量是「失败数据 + 奖励接口」谁先标准化。</li>
+        <li><strong>空间感知的军备赛</strong>:合成空间 QA(SpatialVLM/SpatialRGPT 路线)已被证明能缩差;RynnBrain 的原生 3D 定位、Qwen3-VL 的 3D grounding 都在补这一课。谁先让「眼睛」追平「嘴和手」,谁的分层架构才名实相符。</li>
+        <li><strong>评测层的公共品</strong>:具身领域缺一个「大家都认」的动作成功率协议——像 MMLU 当年对 LLM 那样。谁做出来,谁定义这个领域的进步叙事。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <strong>💡 对做感知评测的人的特别提醒:</strong>具身大脑的「大脑」全部建立在通用 VLM 上,
+      而通用 VLM 的原子感知(计数、空间关系、深度、幻觉)至今无人及格(PerceptionBench:最高 59.7%)。
+      也就是说,<strong>感知层 benchmark 的进步会线性地转化为具身系统的上限</strong>——
+      这个领域少数「bench 改进能直接推动模型进步」的杠杆点,就在感知与空间这一层。
+    </div>
+
+    <!-- ========== 9. 未能核实 ========== -->
+    <h2 id="sec-caveat">9 · 未能核实与口径存疑清单</h2>
+    <ul>
+      <li>π0 总参数量(官方未公布);「π0.6 独立发布」未见官方渠道,仅出现在 π*0.6 论文叙述中。</li>
+      <li>GR00T N2 的确切状态:多方报道不一致(CES 2026 发布 vs GTC 2026 预览 vs 年底发布),非官方来源。</li>
+      <li>OpenEQA 上「Gemini 1.5 Flash 72.5」仅单一二手来源,与官方协议疑似不一致;可锚定数字为 GPT-4V 48.5 / 人类 85.9。</li>
+      <li>1X 家庭部署「数百至数千户」为计划口径,实际完成数未公开;Figure 家庭 Alpha 测试规模未公开。</li>
+      <li>自变量 2026 年 A++ 轮 10 亿融资仅百科口径;它石智航模型细节未公开。</li>
+      <li>所有标「自报」的成功率(GR-2 97.7%、GR-3 98.1%、腾讯 &gt;95%、千寻产线 99%、优必选/众擎宣称值等)均无第三方复现。</li>
+      <li>「全球机器人数据 ~30 万小时」为 Bessemer 等机构的估计值,不同机构口径互有出入。</li>
+      <li>部分 2026 年资料为预印本或厂商博客,未经同行评审;融资/估值数字以工商登记为准。</li>
+    </ul>
+
+    <!-- ========== 10. 参考资料 ========== -->
+    <h2 id="sec-refs">10 · 参考资料(核心来源)</h2>
+    <h3>技术报告与论文</h3>
+    <ol class="refs">
+      <li>Google:<a href="https://arxiv.org/abs/2503.20020" target="_blank" rel="noopener">Gemini Robotics(arXiv:2503.20020)</a> · <a href="https://arxiv.org/html/2510.03342v3" target="_blank" rel="noopener">Gemini Robotics 1.5/ER 1.5(arXiv:2510.03342)</a> · <a href="https://deepmind.google/blog/gemini-robotics-2-brings-whole-body-intelligence-to-robots/" target="_blank" rel="noopener">Gemini Robotics 2 官方博客</a> · <a href="https://deepmind.google/blog/genie-3-a-new-frontier-for-world-models/" target="_blank" rel="noopener">Genie 3</a></li>
+      <li>Anthropic:<a href="https://www.anthropic.com/research/claude-plays-robotics" target="_blank" rel="noopener">How Claude performs on robotics tasks(2026-07)</a> · <a href="https://www.anthropic.com/research/project-fetch-robot-dog" target="_blank" rel="noopener">Project Fetch</a> · <a href="https://www.anthropic.com/research/project-fetch-phase-two" target="_blank" rel="noopener">Project Fetch Phase 2</a></li>
+      <li>Physical Intelligence:<a href="https://www.pi.website/blog/pi0" target="_blank" rel="noopener">π0(2024-10)</a> · <a href="https://arxiv.org/abs/2504.16054" target="_blank" rel="noopener">π0.5(arXiv:2504.16054)</a> · <a href="https://arxiv.org/abs/2511.14759" target="_blank" rel="noopener">π*0.6 RECAP(arXiv:2511.14759)</a></li>
+      <li>开源 VLA 谱系:<a href="https://arxiv.org/abs/2406.09246" target="_blank" rel="noopener">OpenVLA(arXiv:2406.09246)</a> · <a href="https://arxiv.org/abs/2411.19650" target="_blank" rel="noopener">CogACT(arXiv:2411.19650)</a> · <a href="https://arxiv.org/abs/2410.07864" target="_blank" rel="noopener">RDT-1B(arXiv:2410.07864)</a> · <a href="https://arxiv.org/abs/2501.15830" target="_blank" rel="noopener">SpatialVLA(arXiv:2501.15830)</a> · <a href="https://arxiv.org/html/2507.15493v1" target="_blank" rel="noopener">GR-3(arXiv:2507.15493)</a> · <a href="https://arxiv.org/html/2410.06158v1" target="_blank" rel="noopener">GR-2(arXiv:2410.06158)</a></li>
+      <li>国内大脑:<a href="https://github.com/alibaba-damo-academy/RynnBrain" target="_blank" rel="noopener">RynnBrain 1.0(GitHub)</a> · <a href="https://arxiv.org/html/2607.17977" target="_blank" rel="noopener">RynnBrain 1.1(arXiv:2607.17977)</a> · <a href="https://arxiv.org/abs/2503.06669" target="_blank" rel="noopener">智元 GO-1 / AgiBot World(arXiv:2503.06669)</a> · <a href="https://arxiv.org/html/2505.03233" target="_blank" rel="noopener">银河通用 GraspVLA(arXiv:2505.03233)</a> · <a href="https://arxiv.org/pdf/2507.02029" target="_blank" rel="noopener">BAAI RoboBrain 2.0(arXiv:2507.02029)</a> · <a href="https://tairos.tencent.com/models" target="_blank" rel="noopener">腾讯 Tairos 官网</a> · <a href="https://github.com/X-Square-Robot/wall-x" target="_blank" rel="noopener">自变量 WALL-OSS(GitHub)</a></li>
+      <li>分层与感知增强:<a href="https://www.figure.ai/news/helix" target="_blank" rel="noopener">Figure Helix</a> · <a href="https://openaccess.thecvf.com/content/CVPR2024/papers/Chen_SpatialVLM_Endowing_Vision-Language_Models_with_Spatial_Reasoning_Capabilities_CVPR_2024_paper.pdf" target="_blank" rel="noopener">SpatialVLM(CVPR'24)</a> · <a href="https://arxiv.org/abs/2406.10721" target="_blank" rel="noopener">RoboPoint(arXiv:2406.10721)</a> · <a href="https://arxiv.org/html/2506.04308v3" target="_blank" rel="noopener">RoboRefer/RefSpatial(arXiv:2506.04308)</a> · <a href="https://ai.meta.com/blog/v-jepa-2-world-model-benchmarks/" target="_blank" rel="noopener">Meta V-JEPA 2</a></li>
+      <li>世界模型:<a href="https://developer.nvidia.com/blog/pretrained-to-imagine-fine-tuned-to-act-the-rise-of-world-action-models/" target="_blank" rel="noopener">NVIDIA World-Action Models / DreamGen</a> · <a href="https://arxiv.org/abs/2506.21539" target="_blank" rel="noopener">WorldVLA(arXiv:2506.21539)</a> · <a href="https://www.1x.tech/discover/world-model-self-learning" target="_blank" rel="noopener">1X World Model</a></li>
+      <li>Benchmark:<a href="https://arxiv.org/html/2405.05941v1" target="_blank" rel="noopener">SimplerEnv(arXiv:2405.05941)</a> · <a href="https://arxiv.org/html/2510.03827v1" target="_blank" rel="noopener">LIBERO-PRO(arXiv:2510.03827)</a> · <a href="https://arxiv.org/html/2412.18194v1" target="_blank" rel="noopener">VLABench(arXiv:2412.18194)</a> · <a href="https://arxiv.org/html/2502.09560v3" target="_blank" rel="noopener">EmbodiedBench(arXiv:2502.09560)</a> · <a href="https://arxiv.org/abs/2506.18123" target="_blank" rel="noopener">RoboArena(arXiv:2506.18123)</a> · <a href="https://arxiv.org/pdf/2606.04233" target="_blank" rel="noopener">What Are We Actually Benchmarking(2026-06)</a> · <a href="https://arxiv.org/html/2601.18723v1" target="_blank" rel="noopener">Trustworthy Evaluation of Robotic Manipulation(2026-01)</a></li>
+      <li>具身 QA 与空间评测:<a href="https://ai.meta.com/blog/openeqa-embodied-question-answering-robotics-ar-glasses/" target="_blank" rel="noopener">OpenEQA(CVPR'24)</a> · <a href="https://github.com/embodiedreasoning/ERQA" target="_blank" rel="noopener">ERQA(GitHub)</a> · <a href="https://vision-x-nyu.github.io/thinking-in-space.github.io/" target="_blank" rel="noopener">VSI-Bench</a> · <a href="https://arxiv.org/abs/2505.23764" target="_blank" rel="noopener">MMSI-Bench(arXiv:2505.23764)</a> · <a href="https://arxiv.org/html/2412.07755" target="_blank" rel="noopener">SAT(arXiv:2412.07755)</a> · <a href="https://arxiv.org/abs/2411.00081" target="_blank" rel="noopener">PARTNR(arXiv:2411.00081)</a> · <a href="https://www.kimi.com/ja/blog/perception-bench" target="_blank" rel="noopener">PerceptionBench(Moonshot AI,arXiv:2607.24957)</a></li>
+      <li>数据:<a href="https://arxiv.org/abs/2310.08864" target="_blank" rel="noopener">Open X-Embodiment(arXiv:2310.08864)</a> · <a href="https://arxiv.org/html/2403.12945v1" target="_blank" rel="noopener">DROID(arXiv:2403.12945)</a> · <a href="https://arxiv.org/abs/2402.10329" target="_blank" rel="noopener">UMI(arXiv:2402.10329)</a> · <a href="https://arxiv.org/abs/2310.17596" target="_blank" rel="noopener">MimicGen(arXiv:2310.17596)</a> · <a href="https://arxiv.org/html/2410.24221" target="_blank" rel="noopener">EgoMimic(arXiv:2410.24221)</a> · <a href="https://arxiv.org/html/2606.00054v1" target="_blank" rel="noopener">人视频迁移综述(2026)</a></li>
+      <li>数据缺口分析:<a href="https://www.bvp.com/atlas/bessemer-predicts-robotics-and-physical-ai" target="_blank" rel="noopener">Bessemer:Robotics & Physical AI(2026-04)</a> · <a href="https://www.stellarisvp.com/blog/physical-ai-has-a-massive-data-problem" target="_blank" rel="noopener">Stellaris:Physical AI's Data Problem(2026-04)</a></li>
+      <li>海外公司:<a href="https://techcrunch.com/2025/02/04/figure-drops-openai-in-favor-of-in-house-models/" target="_blank" rel="noopener">Figure 弃 OpenAI(TechCrunch)</a> · <a href="https://fortune.com/2025/04/06/figure-ai-bmw-humanoid-robot-partnership-details-reality-exaggeration/" target="_blank" rel="noopener">Figure×BMW 夸大质疑(Fortune)</a> · <a href="https://www.therobotreport.com/1x-announces-pre-order-launch-neo-humanoid-robot/" target="_blank" rel="noopener">1X NEO 预售(Robot Report)</a> · <a href="https://www.skild.ai/blogs" target="_blank" rel="noopener">Skild Brain</a> · <a href="https://www.fieldai.com/news/fieldai-announces-over-400m-in-funds-raised-to-advance-embodied-ai-at-scale" target="_blank" rel="noopener">Field AI $405M</a></li>
+      <li>国内公司:<a href="https://www.guancha.cn/economy/2025_12_08_799761.shtml" target="_blank" rel="noopener">智元 5000 台下线(观察者网)</a> · <a href="https://www.qbitai.com/2026/02/380787.html" target="_blank" rel="noopener">银河通用融资与落地(量子位)</a> · <a href="https://www.qbitai.com/2025/09/329014.html" target="_blank" rel="noopener">字节 Robix(量子位)</a> · <a href="https://www.scmp.com/tech/tech-war/article/3343212/alibaba-unveils-rynnbrain-embodied-ai-model-gives-robots-brain" target="_blank" rel="noopener">RynnBrain(SCMP)</a> · <a href="https://hub.baai.ac.cn/view/51832" target="_blank" rel="noopener">千寻 Spirit v1.5(智源社区)</a> · <a href="https://www.ithome.com/0/974/115.htm" target="_blank" rel="noopener">蚂蚁 LingBot-VLA 2.0(IT之家)</a> · <a href="https://finance.eastmoney.com/a/202609103870683394.html" target="_blank" rel="noopener">宇树 UnifoLM-WLA(东方财富)</a> · <a href="https://www.guancha.cn/economy/2025_06_20_780175.shtml" target="_blank" rel="noopener">华为 CloudRobo(观察者网)</a></li>
+      <li>评测危机讨论:<a href="https://robot-wiki.com/data-hardware/evaluation-crisis/" target="_blank" rel="noopener">robot-wiki:The Evaluation Crisis</a> · <a href="https://korymathewson.com/cherry-pick-ratio/" target="_blank" rel="noopener">The Cherry Pick Ratio</a></li>
+    </ol>
+
+    <a class="back" href="/#research">← 返回 Research 目录</a>
+  </article>
+</div>
+
+<footer class="footer">
+  <p>© 2026 Caesar-s1mple · 本文整理自公开资料,数据以各官方渠道为准 · 如有勘误欢迎到 <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io" target="_blank" rel="noopener">GitHub 仓库</a> 提 issue</p>
+  <p class="egg">站点自检:1 + 1 = 2 ✓ 一切正常</p>
+</footer>
+
+<script>
+/* ================= 目录 + scrollspy ================= */
+const TOC_ITEMS = [
+  { id: "sec-tldr",     t: "1 · 总览:四个核心判断", l1: true },
+  { id: "sec-timeline", t: "2 · 两年大事记", l1: true },
+  { id: "sec-routes",   t: "3 · 怎么做:三条路线与收敛", l1: true },
+  { id: "sec-overseas", t: "4 · 海外:OpenAI 零模型,Anthropic 只评测", l1: true },
+  { id: "sec-china",    t: "5 · 国内:Qwen 是隐形底座", l1: true },
+  { id: "sec-data",     t: "6 · 数据:缺的不只是量", l1: true },
+  { id: "sec-bench",    t: "7 · Benchmark:三层评测危机", l1: true },
+  { id: "sec-gap",      t: "8 · 解读:缺在哪,需要什么 bench", l1: true },
+  { id: "sec-caveat",   t: "9 · 未能核实清单", l1: true },
+  { id: "sec-refs",     t: "10 · 参考资料", l1: true }
+];
+document.getElementById("toc").innerHTML =
+  `<div class="toc-title">目录</div>` +
+  TOC_ITEMS.map(i => `<a href="#${i.id}" class="${i.l1 ? "l1" : "l2"}" data-toc="${i.id}">${i.t}</a>`).join("");
+document.getElementById("toc-mobile").innerHTML =
+  TOC_ITEMS.map(i => `<a href="#${i.id}" style="${i.l1 ? "font-weight:600" : "padding-left:16px"}">${i.t}</a>`).join("");
+
+const tocLinks = {};
+document.querySelectorAll("[data-toc]").forEach(a => tocLinks[a.dataset.toc] = a);
+const spy = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      Object.values(tocLinks).forEach(a => a.classList.remove("on"));
+      const link = tocLinks[e.target.id];
+      if (link) { link.classList.add("on"); link.scrollIntoView({ block: "nearest" }); }
+    }
+  });
+}, { rootMargin: "-70px 0px -65% 0px" });
+TOC_ITEMS.forEach(i => { const el = document.getElementById(i.id); if (el) spy.observe(el); });
+</script>
+</body>
+</html>
