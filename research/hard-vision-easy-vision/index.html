@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hard Vision, Easy Vision：通用视觉的进展与边界 · Caesar-s1mple</title>
+<meta name="description" content="完整解读 Hard Vision, Easy Vision：6 个通用系统、9 个视觉领域、34 项能力与 55 个基准。结合论文 9 张原图、交互成绩表，拆解 GPT-6 Astra 的推理与结构化预测进展、几何和保真短板、工具成本及评测口径。">
+<meta name="card:date" content="2026-10-04">
+<meta name="card:read" content="约 35 分钟阅读">
+<meta name="card:tags" content="论文解读|多模态 · 视觉评测">
+<meta name="card:cover-sub" content="34 项能力全景 · 看懂、定位与精确还原">
+<meta property="og:title" content="Hard Vision, Easy Vision：通用视觉的进展与边界">
+<meta property="og:description" content="9 张论文原图、34 项完整成绩：理解为什么通用视觉越来越强，而精确几何、忠实恢复和专家细分类仍然很难。">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://caesar-s1mple.github.io/research/hard-vision-easy-vision/assets/fig1-landscape.webp">
+<link rel="canonical" href="https://caesar-s1mple.github.io/research/hard-vision-easy-vision/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="article.css">
+<script src="article.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#article">跳至正文</a>
+<nav class="nav" aria-label="主导航"><div class="nav-inner"><a class="wordmark" href="/">Caesar<em>-s1mple</em></a><div class="nav-links"><a href="/">首页</a><a href="/#research" class="here">Research</a><a href="/#projects">Projects</a><a href="/#blog">Blog</a></div></div></nav>
+<header class="article-head"><div class="wrap">
+<div class="crumb"><a href="/">首页</a> / <a href="/#research">调研与解读</a> / 通用视觉能力全景</div>
+<div class="kicker">Paper Notes · Computer Vision</div>
+<h1>Hard Vision, Easy Vision：通用视觉的进展与边界</h1>
+<p class="article-sub">从“能看懂”到“能精确还原”，还差什么？用 34 项能力、9 张论文原图和一组成本实验，读懂 GPT-6 Astra 与五个前沿系统的视觉能力地图。</p>
+<div class="article-meta"><span class="pill">论文深度解读</span><span class="pill">多模态 · 视觉评测</span><span>2026-10-04</span><span>约 35 分钟阅读</span><span>原论文：2026-09-28 · v1</span></div>
+<div class="source-links"><a href="https://arxiv.org/pdf/2609.35718v1">阅读论文 ↗</a><a href="https://mbzuai-oryx.github.io/frontier-vision/">作者项目页 ↗</a><a href="#results">查看 34 项成绩 ↓</a><a href="#audit">核对评测口径 ↓</a></div>
+</div></header>
+<main class="wrap layout"><aside class="toc" aria-label="文章目录"><div class="toc-title">阅读导航</div><a href="#takeaways" data-toc="takeaways">1 · 先读懂结论：理解世界与精确还原世界</a><a href="#setup" data-toc="setup">2 · 怎么测：测的是可调用的视觉系统</a><a href="#results" data-toc="results">3 · 总成绩：先看绝对分数，再看参考值</a><a href="#reading-reasoning" data-toc="reading-reasoning">4 · 识别与推理：共享强项和新增能力在哪里</a><a href="#structured" data-toc="structured">5 · 从会描述到会输出：二维、三维与视频</a><a href="#generation" data-toc="generation">6 · 图像生成与恢复：最直观的一道能力边界</a><a href="#robotics-expert" data-toc="robotics-expert">7 · 机器人与专家领域：会推理不等于会执行、会辨别</a><a href="#reasoning-tools" data-toc="reasoning-tools">8 · 多想一会儿、用工具，值不值？</a><a href="#maturity" data-toc="maturity">9 · 成熟度地图：参考线一换，结论就可能反转</a><a href="#audit" data-toc="audit">10 · 论文有哪些口径冲突与证据边界</a><a href="#implications" data-toc="implications">11 · 对模型、评测和系统设计的启示</a><a href="#sources" data-toc="sources">12 · 来源与阅读索引</a></aside><article class="art" id="article"><details class="mobile-toc"><summary>本文目录 · 12 节</summary><a href="#takeaways">1 · 先读懂结论：理解世界与精确还原世界</a><a href="#setup">2 · 怎么测：测的是可调用的视觉系统</a><a href="#results">3 · 总成绩：先看绝对分数，再看参考值</a><a href="#reading-reasoning">4 · 识别与推理：共享强项和新增能力在哪里</a><a href="#structured">5 · 从会描述到会输出：二维、三维与视频</a><a href="#generation">6 · 图像生成与恢复：最直观的一道能力边界</a><a href="#robotics-expert">7 · 机器人与专家领域：会推理不等于会执行、会辨别</a><a href="#reasoning-tools">8 · 多想一会儿、用工具，值不值？</a><a href="#maturity">9 · 成熟度地图：参考线一换，结论就可能反转</a><a href="#audit">10 · 论文有哪些口径冲突与证据边界</a><a href="#implications">11 · 对模型、评测和系统设计的启示</a><a href="#sources">12 · 来源与阅读索引</a></details><h2 id="takeaways">1 · 先读懂结论：理解世界与精确还原世界</h2>
+<p class="lead">给模型一张保龄球馆的暗照片，它能把画面变亮、让球道更清晰，却可能把四个球瓶变成五个。这个例子几乎浓缩了整篇论文：<strong>视觉上合理的结果，和忠实于输入的结果，是两种能力。</strong></p>
+<p>《Hard Vision, Easy Vision》由 MBZUAI 与 Apertix 的 Hanoona Rasheed、Mohammed Irfan Kurpath、Bin Ren、Hisham Cholakkal、Fahad Shahbaz Khan、Salman Khan 撰写，前两位为共同一作。它是一篇横向评测与分析论文：用统一的任务指令、输入与样本，观察六个前沿通用系统能覆盖多少传统计算机视觉工作，以及离专用模型和人类还有多远。<a class="source" href="https://arxiv.org/pdf/2609.35718v1#page=2">[§1–2]</a></p>
+<div class="statband"><div class="stat"><b>6</b><span>前沿通用系统</span></div><div class="stat"><b>9</b><span>视觉领域</span></div><div class="stat"><b>34</b><span>能力维度</span></div><div class="stat"><b>55</b><span>使用的基准</span></div></div>
+<div class="grid2">
+<div class="card easy"><h3>进展更明显：语义、推理、围绕对象的预测</h3><p>读文字、解图表、做视觉数学题，或按指令找到物体、画出框和掩码。部分能力已达到论文选取的专用模型或人类参考分数。</p></div>
+<div class="card hard"><h3>仍然困难：度量、保真、时序与专门知识</h3><p>每个像素离相机多少米、多视角能否拼成一致几何、视频中的细边界能否保持、病理细胞究竟属于哪一类——这些约束仍很难满足。</p></div>
+</div>
+<p>读完最值得记住的四件事：<strong>第一，任务覆盖面已经扩展到框、掩码、深度、三维结构和动作；第二，Astra 的领先尤其集中在视觉推理和结构化预测；第三，领先其他通用模型不代表追上最强参考；第四，增加推理或调用工具的收益高度依赖任务。</strong></p>
+<div class="callout"><p><strong>本文如何读数：</strong>以 arXiv v1 的 <b>Table 1</b> 为数值主线，用 Table 2 解释指标与参考模型。涉及“最佳通用模型”时逐行选择最佳值；涉及“最强参考”时在已报告的模型与人类参考中择优。原文图表之间的冲突集中列在<a href="#audit">第 10 节</a>，本文的分析建议标注为“解读”，不当作论文实验结论。</p></div>
+<figure class="figure" id="figure-1"><a href="assets/fig1-landscape.webp" target="_blank" rel="noopener" aria-label="打开图 1 高清原图"><img src="assets/fig1-landscape.webp" alt="论文任务全景：识别阅读、空间推理、视觉推理、二维定位、三维几何、生成恢复、视频、机器人和专家领域。" width="1416" height="909" loading="eager" decoding="async"></a><figcaption><strong>图 1 · 一张图看覆盖面。</strong>九个领域中既有回答问题，也有输出框、掩码、深度与动作。34 项能力不等于 34 种问答题；图中只展示代表任务。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=1">原论文 Figure 1，p.1</a>。点击可查看高清图。</figcaption></figure>
+
+<h2 id="setup">2 · 怎么测：测的是可调用的视觉系统</h2>
+<h3>2.1 六个系统与四个研究问题</h3>
+<p>参评的是 <strong>GPT-6 Astra、Fable 5、Kimi K3、Gemini 3.1 Pro、Qwen 3.8-Max、Muse Spark 1.3</strong>。作者将讨论组织为四个问题：覆盖面有多广？哪些能力已经普及、哪些仍拉开差距？什么任务能达到专用模型水平？多想一会儿、用工具、接专用模型，能否补齐短板？</p>
+<p>同一基准上，各系统接收相同任务指令、视觉输入和评测样本，并用相应基准的指标评分。支持多个推理档位时，主评测采用作者认为适用于任务的最强可用设置。因此，这是一种<strong>能力上限取向的比较</strong>，不能直接读成等成本、等延迟的比较。<a class="source" href="https://arxiv.org/pdf/2609.35718v1#page=2">[§2]</a></p>
+<div class="flow" role="img" aria-label="评测流程：基准输入与任务指令，通用推理系统及可用工具，转换为任务所需格式，按基准指标评分并比较参考值">
+<div><b>01 · 相同任务输入 →</b><span>图像、视频或环境观察<br>加自然语言指令</span></div>
+<div><b>02 · 系统完成任务 →</b><span>推理与结构化输出<br>部分设置调用工具</span></div>
+<div><b>03 · 转为评测格式 →</b><span>框、像素掩码、深度图<br>点云、图像或动作</span></div>
+<div><b>04 · 按任务评分</b><span>使用对应基准指标<br>对照模型与人类参考</span></div>
+</div>
+<p class="source">中文流程图：依据论文 §2、§8 整理；不表示所有任务都启用了相同工具。</p>
+<h3>2.2 输出不止文字：格式转换也是评测的一部分</h3>
+<div class="table-wrap"><table><thead><tr><th scope="col">输出任务</th><th scope="col">论文怎么处理</th><th scope="col">理解上的要点</th></tr></thead><tbody>
+<tr><th scope="row">图像／视频分割</th><td>把多边形栅格化为像素掩码；部分工具运行直接生成掩码。</td><td>高分可能来自结构化描述加后处理，不能据此推断底层网络结构。</td></tr>
+<tr><th scope="row">深度估计</th><td>将预测表面、深度锚点渲染成稠密深度图，或执行模型编写的代码直接生成。</td><td>要评估真实距离和局部表面，而不只是远近关系。</td></tr>
+<tr><th scope="row">3D 检测与重建</th><td>由中心、尺寸、旋转还原三维框；将深度与相机参数结合为共享坐标系下的点云／点图。</td><td>输出转换与坐标对齐会影响最终结果。</td></tr>
+<tr><th scope="row">显微与病理</th><td>把实例图与类别图转为带类别的细胞核多边形，并处理检测、分割所需格式。</td><td>找到结构、画准边界与分对类型要分开理解。</td></tr>
+<tr><th scope="row">图像生成与编辑</th><td>推理模型组织指令，再调用对应图像模型。</td><td>这是组合系统的分数。</td></tr>
+</tbody></table></div>
+<p>具体配对为：Astra ＋ <b>GPT Image 2.5 Sunburst</b>；Qwen 3.8-Max ＋ <b>Qwen Image 3 Pro</b>；Muse Spark 1.3 ＋ <b>Muse Image</b>；Gemini 3.1 Pro ＋ <b>Gemini 3.1 Flash Image</b>。Fable 5 和 Kimi K3 在文生图、指令编辑两行标为 <code>n/s</code>。<strong>n/s 表示该评测接口不支持相应输出类型，不能当成零分。</strong><a class="source" href="https://arxiv.org/pdf/2609.35718v1#page=12">[§8]</a></p>
+<h3>2.3 “专用模型参考”里也混有早期通用模型</h3>
+<p>Table 1 的 Reference Model 可以是任务专用模型，也可以是该基准此前领先的通用模型。例如，2D 检测对照 Rex-Omni，深度对照 DA3，重建对照 VGGT-1B；但 3D 视觉定位对照 Gemini-2.5-Pro，医学理解对照 GPT-5.6 Sol，遥感推理对照 GPT-5.4。因此本文统一称为<strong>“模型参考”</strong>，需要讨论真正的专用模型时再具体点名。人类分数来自基准报告，不是作者新组织的一组统一人类实验。<a class="source" href="https://arxiv.org/pdf/2609.35718v1#page=11">[Table 2]</a></p>
+<div class="callout caution"><p><strong>“55 个基准”不等于“完整跑遍 55 套测试集”。</strong>§8 明确允许使用完整基准、相关任务子集，或组合多个基准形成能力维度；论文没有逐项公开全部样本清单、抽样数量和聚合权重。34 行是能力级汇总，不能把其中一行理解为某个原始基准的官方全量榜单分数。</p></div>
+<details><summary>展开：九个领域覆盖什么，以及论文列出的全部 55 个基准</summary>
+<div class="table-wrap"><table><thead><tr><th scope="col">领域</th><th scope="col">能力数</th><th scope="col">典型任务</th></tr></thead><tbody>
+<tr><td>识别、感知与视觉阅读</td><td>5</td><td>识别、细粒度区分、计数、OCR、文档图表</td></tr>
+<tr><td>视觉推理</td><td>3</td><td>逻辑、数学、科学</td></tr><tr><td>空间推理</td><td>2</td><td>二维空间、三维与多视角</td></tr>
+<tr><td>二维定位与分割</td><td>4</td><td>检测、指代定位、分割、姿态</td></tr><tr><td>三维感知与几何</td><td>4</td><td>深度、检测、定位、重建</td></tr>
+<tr><td>视频</td><td>3</td><td>理解、时序定位、分割</td></tr><tr><td>生成、编辑与恢复</td><td>4</td><td>文生图、编辑、恢复、质量判断</td></tr>
+<tr><td>机器人</td><td>3</td><td>驾驶理解、具身理解、导航</td></tr><tr><td>专家领域</td><td>6</td><td>医学理解与 2D／3D 定位、病理、遥感推理与定位</td></tr>
+</tbody></table></div>
+<p class="bench-list">以下按 §8 原文顺序列出，不额外猜测每个基准归入哪一行或占多大权重：</p>
+<p class="bench-list">MMStar · BabyVision · BLINK · V*Bench · PerceptionBench · WorldVQA · RealWorldQA · BlindTest · MMMU-Pro · VisualPuzzles · ZeroBench · MathVista · MathVision · PixMo-Count · CountQA · VLMsAreBiased · InfoVQA · CharXiv · MindCube-Tiny · OmniSpatial · VisFactor · MMSI-Bench · Dense200 · ScreenSpotPro · RefCOCO · ReasonSeg · OCHuman · Anywhere3Dv2 · DIODE · ETH3D · Omni3D · MMVU · VSI-Bench · ActivityNet · DAVIS · ERQA · LingoQA · DrivingVQA · EmbodiedBench · MedXpertQA-MM · MMMU-Pro-Med · MS-CXR · M3D-Bench · PUMA · VLRS-Bench · RefSegRS · Q-Bench2 · UniPercept · BSD68 · Urban100 · Rain100L · SOTS · GoPro · LOL-v1 · GenEval2 · ImageEditBench。</p>
+<p class="bench-list">其中 PerceptionBench 是论文引用 [40] 的原子视觉感知基准。它和推理型基准一起进入评测，但论文没有单独给出其完整分项成绩。§8 输出处理另提到 DPG-Bench，和上面的 55 项列表并不完全对应，见<a href="#audit">口径核对</a>。</p>
+</details>
+
+<h2 id="results">3 · 总成绩：先看绝对分数，再看参考值</h2>
+<p>按 Table 1 的 34 行逐项统计，Astra 在其中 <strong>32 行</strong>取得六个通用系统中的最佳数值；另外两行是 <strong>Muse Spark 1.3 的视频理解（75.6）</strong>与 <strong>Gemini 3.1 Pro 的遥感推理（50.0）</strong>。这是本文根据主表做的计数，不是论文提出的综合指标：各行难度、单位、样本数和可运行系统数量都不同，不能据此计算一个有意义的“总正确率”。</p>
+<div class="explorer" id="explorer"><p class="eyebrow">成绩对照 · 可交互</p><div class="controls" id="chart-controls" hidden><label for="capability">选择能力<select id="capability"><option value="recognition">视觉识别</option><option value="finegrained">细粒度区分</option><option value="counting">视觉计数</option><option value="ocr">OCR 与文字识别</option><option value="documents">文档与图表理解</option><option value="logical">视觉逻辑推理</option><option value="math">视觉数学推理</option><option value="scientific">科学推理</option><option value="spatial2d">2D 空间推理</option><option value="spatial3d">3D 与多视角推理</option><option value="detection">2D 目标检测</option><option value="grounding">2D 视觉定位</option><option value="segmentation">图像分割</option><option value="pose2d">2D 姿态估计</option><option value="depth">深度估计</option><option value="detection3d">3D 目标检测</option><option value="grounding3d">3D 视觉定位</option><option value="reconstruction">3D 重建</option><option value="video">视频理解</option><option value="temporal">时序定位</option><option value="videoseg">视频分割</option><option value="t2i">文生图</option><option value="editing">指令图像编辑</option><option value="restoration">图像恢复</option><option value="quality">图像质量评估</option><option value="driving">驾驶场景推理</option><option value="embodied">具身理解</option><option value="navigation">机器人导航</option><option value="medical">医学理解</option><option value="medground2d">2D 医学定位</option><option value="medground3d">3D 医学定位</option><option value="pathology">显微与病理</option><option value="remote">遥感推理</option><option value="remoteground">遥感定位</option></select></label><label for="reference-mode">选择参考<select id="reference-mode"><option value="strongest">最强可用参考（默认）</option><option value="model">仅模型参考</option><option value="human">仅人类参考</option></select></label></div><h3 id="chart-title">视觉识别 · Accuracy ↑</h3><div class="bar-chart" id="bar-chart"><div class="bar-row"><span class="bar-label">GPT-6 Astra</span><div class="bar-track"><div class="bar-fill winner" style="width:77.86%"></div></div><span class="bar-value">77.0</span></div><div class="bar-row"><span class="bar-label">Fable 5</span><div class="bar-track"><div class="bar-fill " style="width:72.30%"></div></div><span class="bar-value">71.5</span></div><div class="bar-row"><span class="bar-label">Kimi K3</span><div class="bar-track"><div class="bar-fill " style="width:71.69%"></div></div><span class="bar-value">70.9</span></div><div class="bar-row"><span class="bar-label">Gemini 3.1 Pro</span><div class="bar-track"><div class="bar-fill " style="width:70.37%"></div></div><span class="bar-value">69.6</span></div><div class="bar-row"><span class="bar-label">Qwen 3.8-Max</span><div class="bar-track"><div class="bar-fill " style="width:73.51%"></div></div><span class="bar-value">72.7</span></div><div class="bar-row"><span class="bar-label">Muse Spark 1.3</span><div class="bar-track"><div class="bar-fill " style="width:73.51%"></div></div><span class="bar-value">72.7</span></div><div class="bar-row"><span class="bar-label">人类参考</span><div class="bar-track"><div class="bar-fill reference" style="width:100%"></div></div><span class="bar-value">98.9</span></div></div><p class="chart-note" id="chart-metric">条形从 0 开始，按当前任务的最大读数缩放；只比较同一项指标。绿色是六个系统中的最佳值，金色是所选参考。</p><div aria-live="polite" aria-atomic="true"><p id="chart-summary">最佳通用系统为 GPT-6 Astra（77.0）；人类参考为 98.9。相差 21.9 个指标单位，仍低于参考。</p><p class="chart-note" id="chart-reference">模型参考：61.1（SEAL / Gemini 3 Pro）；人类参考：98.9。</p></div><noscript><p class="chart-note">交互切换需要 JavaScript；下面的完整成绩表无需脚本即可阅读。</p></noscript></div>
+<p>最有信息量的通常是两种差距同时看。例如 Astra 的视频分割比第二名高 <strong>26.6</strong> 分，但比模型参考仍低 <strong>6.5</strong> 分；3D 医学定位比第二名高 <strong>27.9</strong> 分，也超过所选模型参考 <strong>14.5</strong> 分，但没有可比较的人类参考。前者表示通用模型间的能力跃迁，后者才回答离外部参考还有多远。</p>
+<details><summary>展开完整主表：34 项能力 × 六个系统，以及模型／人类参考</summary>
+<p class="source">手机上可横向滑动。绿色粗体为六个通用系统中的最佳值；深度、重建的 ↓ 表示越低越好。n/s 为不支持该输出类型；— 为未报告可用参考。不同指标的值不可直接相加。</p>
+<div class="table-wrap wide" tabindex="0" role="region" aria-label="可横向滚动的完整成绩表"><table class="data-table"><caption>Table 1 完整转录；模型参考名称见 Table 2。所有最佳值仅在六个参评通用系统间选取。</caption><thead><tr><th scope="col">能力／指标</th><th scope="col">GPT-6 Astra</th><th scope="col">Fable 5</th><th scope="col">Kimi K3</th><th scope="col">Gemini 3.1 Pro</th><th scope="col">Qwen 3.8-Max</th><th scope="col">Muse Spark 1.3</th><th scope="col">模型参考</th><th scope="col">人类参考</th></tr></thead><tbody><tr><th scope="row">视觉识别<small>Accuracy ↑</small></th><td class="best">77.0</td><td>71.5</td><td>70.9</td><td>69.6</td><td>72.7</td><td>72.7</td><td>61.1<small>SEAL / Gemini 3 Pro</small></td><td>98.9</td></tr><tr><th scope="row">细粒度区分<small>Accuracy ↑</small></th><td class="best">86.1</td><td>70.0</td><td>64.0</td><td>69.5</td><td>75.6</td><td>77.0</td><td>—<small>未报告</small></td><td>96.5</td></tr><tr><th scope="row">视觉计数<small>Accuracy ↑</small></th><td class="best">82.7</td><td>69.6</td><td>74.0</td><td>78.5</td><td>80.3</td><td>76.1</td><td>—<small>未报告</small></td><td>94.0</td></tr><tr><th scope="row">OCR 与文字识别<small>Accuracy ↑</small></th><td class="best">98.1</td><td>97.5</td><td>96.3</td><td>93.8</td><td>94.8</td><td>96.3</td><td>—<small>未报告</small></td><td>98.0</td></tr><tr><th scope="row">文档与图表理解<small>Accuracy ↑</small></th><td class="best">92.8</td><td>91.7</td><td>90.3</td><td>89.8</td><td>91.2</td><td>89.5</td><td>—<small>未报告</small></td><td>89.3</td></tr><tr><th scope="row">视觉逻辑推理<small>Accuracy ↑</small></th><td class="best">81.1</td><td>61.3</td><td>61.2</td><td>60.5</td><td>67.5</td><td>57.6</td><td>—<small>未报告</small></td><td>87.0</td></tr><tr><th scope="row">视觉数学推理<small>Accuracy ↑</small></th><td class="best">92.5</td><td>78.8</td><td>80.4</td><td>82.3</td><td>82.0</td><td>79.3</td><td>—<small>未报告</small></td><td>78.7</td></tr><tr><th scope="row">科学推理<small>Accuracy ↑</small></th><td class="best">86.8</td><td>81.2</td><td>81.6</td><td>80.5</td><td>82.3</td><td>81.2</td><td>—<small>未报告</small></td><td>88.6</td></tr><tr><th scope="row">2D 空间推理<small>Accuracy ↑</small></th><td class="best">96.0</td><td>79.3</td><td>87.0</td><td>84.2</td><td>89.1</td><td>82.6</td><td>—<small>未报告</small></td><td>95.8</td></tr><tr><th scope="row">3D 与多视角推理<small>Accuracy ↑</small></th><td class="best">89.6</td><td>75.2</td><td>76.8</td><td>66.8</td><td>77.0</td><td>77.2</td><td>—<small>未报告</small></td><td>94.1</td></tr><tr><th scope="row">2D 目标检测<small>F1@IoU=0.5 ↑</small></th><td class="best">89.1</td><td>31.1</td><td>67.7</td><td>69.7</td><td>87.0</td><td>46.5</td><td>78.4<small>Rex-Omni</small></td><td>—</td></tr><tr><th scope="row">2D 视觉定位<small>Accuracy ↑</small></th><td class="best">93.1</td><td>87.0</td><td>77.4</td><td>79.6</td><td>87.7</td><td>82.5</td><td>—<small>未报告</small></td><td>96.2</td></tr><tr><th scope="row">图像分割<small>gIoU ↑</small></th><td class="best">81.3</td><td>70.9</td><td>41.3</td><td>56.6</td><td>68.0</td><td>47.3</td><td>77.0<small>SAM 3 Agent</small></td><td>—</td></tr><tr><th scope="row">2D 姿态估计<small>OKS AP ↑</small></th><td class="best">75.2</td><td>19.6</td><td>43.5</td><td>32.0</td><td>52.5</td><td>38.1</td><td>83.6<small>ViTPose++-L</small></td><td>—</td></tr><tr><th scope="row">深度估计<small>AbsRel ↓</small></th><td class="best">0.63</td><td>0.89</td><td>1.00</td><td>1.19</td><td>1.29</td><td>0.82</td><td>0.44<small>DA3</small></td><td>—</td></tr><tr><th scope="row">3D 目标检测<small>AP3D ↑</small></th><td class="best">17.3</td><td>13.8</td><td>8.0</td><td>6.6</td><td>7.1</td><td>7.9</td><td>16.8<small>WildDet3D</small></td><td>—</td></tr><tr><th scope="row">3D 视觉定位<small>Acc@IoU0.25 ↑</small></th><td class="best">73.8</td><td>63.1</td><td>55.8</td><td>59.4</td><td>48.1</td><td>62.1</td><td>46.5<small>Gemini-2.5-Pro</small></td><td>95.0</td></tr><tr><th scope="row">3D 重建<small>Error ↓</small></th><td class="best">1.40</td><td>1.85</td><td>1.96</td><td>1.81</td><td>1.72</td><td>1.89</td><td>0.61<small>VGGT-1B</small></td><td>—</td></tr><tr><th scope="row">视频理解<small>Accuracy ↑</small></th><td>74.3</td><td>59.0</td><td>64.1</td><td>53.0</td><td>70.2</td><td class="best">75.6</td><td>71.5<small>GPT4-o1 / Cambrian-S-7B</small></td><td>82.6</td></tr><tr><th scope="row">时序定位<small>R@1 IoU=0.7 ↑</small></th><td class="best">38.6</td><td>23.7</td><td>24.6</td><td>22.6</td><td>28.6</td><td>25.3</td><td>35.9<small>TRACE</small></td><td>—</td></tr><tr><th scope="row">视频分割<small>J&amp;F ↑</small></th><td class="best">84.5</td><td>57.9</td><td>34.5</td><td>34.9</td><td>32.0</td><td>33.8</td><td>91.0<small>BEE</small></td><td>—</td></tr><tr><th scope="row">文生图<small>Soft-TIFA GM ↑</small></th><td class="best">96.2</td><td>n/s</td><td>n/s</td><td>67.4</td><td>92.1</td><td>92.4</td><td>92.6<small>Structured Conditioning + Qwen-Image</small></td><td>—</td></tr><tr><th scope="row">指令图像编辑<small>Score (1–5) ↑</small></th><td class="best">4.80</td><td>n/s</td><td>n/s</td><td>4.20</td><td>4.67</td><td>4.40</td><td>4.64<small>Boogu-Image-0.1-Edit-Thinking</small></td><td>—</td></tr><tr><th scope="row">图像恢复<small>PSNR (dB) ↑</small></th><td class="best">17.7</td><td>n/s</td><td>17.3</td><td>17.5</td><td>17.4</td><td>17.2</td><td>30.7<small>MIRAGE</small></td><td>—</td></tr><tr><th scope="row">图像质量评估<small>Accuracy ↑</small></th><td class="best">86.2</td><td>n/s</td><td>83.1</td><td>79.5</td><td>81.1</td><td>78.4</td><td>84.9<small>CoInstruct / UniPercept</small></td><td>—</td></tr><tr><th scope="row">驾驶场景推理<small>Accuracy ↑</small></th><td class="best">80.8</td><td>75.8</td><td>71.6</td><td>71.2</td><td>77.1</td><td>76.5</td><td>73.1<small>Qwen-Drive-1.0-SFT / GPT4-o1</small></td><td>88.1</td></tr><tr><th scope="row">具身理解<small>Accuracy ↑</small></th><td class="best">82.3</td><td>70.0</td><td>65.2</td><td>68.0</td><td>77.8</td><td>76.5</td><td>78.5<small>Gemini Robotics-ER 2</small></td><td>—</td></tr><tr><th scope="row">机器人导航<small>Success rate ↑</small></th><td class="best">78.0</td><td>64.0</td><td>48.0</td><td>60.0</td><td>70.0</td><td>67.0</td><td>—<small>未报告</small></td><td>—</td></tr><tr><th scope="row">医学理解<small>Accuracy ↑</small></th><td class="best">86.0</td><td>79.7</td><td>73.9</td><td>78.3</td><td>78.1</td><td>78.3</td><td>81.5<small>GPT-5.6 Sol</small></td><td>45.5</td></tr><tr><th scope="row">2D 医学定位<small>mAP@0.5 ↑</small></th><td class="best">61.5</td><td>35.9</td><td>20.8</td><td>35.0</td><td>58.2</td><td>37.8</td><td>81.8<small>RadVLM</small></td><td>—</td></tr><tr><th scope="row">3D 医学定位<small>mIoU ↑</small></th><td class="best">73.9</td><td>38.0</td><td>38.4</td><td>24.4</td><td>46.0</td><td>43.8</td><td>59.4<small>M3D-LaMed-Llama-2-7B</small></td><td>—</td></tr><tr><th scope="row">显微与病理<small>Macro-F1 ↑</small></th><td class="best">23.8</td><td>22.1</td><td>16.7</td><td>14.1</td><td>21.4</td><td>23.1</td><td>57.1<small>HoVer-NeXt</small></td><td>82.0</td></tr><tr><th scope="row">遥感推理<small>Accuracy ↑</small></th><td>46.3</td><td>42.7</td><td>39.7</td><td class="best">50.0</td><td>48.2</td><td>45.8</td><td>43.9<small>GPT-5.4</small></td><td>—</td></tr><tr><th scope="row">遥感定位<small>mIoU ↑</small></th><td class="best">26.4</td><td>16.8</td><td>20.2</td><td>11.2</td><td>16.1</td><td>13.1</td><td>75.5<small>RSRefSeg 2</small></td><td>—</td></tr></tbody></table></div>
+<p class="source"><a href="assets/scores.json" download>下载结构化成绩 JSON</a> · 数值来源：Table 1；指标及模型参考名称：Table 2 与作者项目页。重建指标按 Table 2 保留为 Error，不补写正文未明确的单位。</p>
+</details>
+<details><summary>读指标：F1、IoU、AP、J&amp;F、AbsRel 与 PSNR 分别在看什么？</summary>
+<ul>
+<li><strong>Accuracy：</strong>回答是否正确。不同能力行的题目与聚合方式不相同。</li>
+<li><strong>IoU：</strong>预测区域与真值区域的交集除以并集。F1@IoU=0.5 同时考虑检出率和误报；Acc@IoU0.25 是在较宽松重叠阈值下判定位是否成功。IoU=0.25 的通过不能保证框的边界非常精确。</li>
+<li><strong>AP、mAP：</strong>综合不同置信度阈值下的精度与召回。OKS AP 用关键点相似度衡量姿态估计；AP3D 衡量三维检测。这里的 AP3D=17.3 不是“17.3% 的物体被正确识别”。</li>
+<li><strong>gIoU、mIoU：</strong>论文用于分割／定位的重叠类指标，越高越好。ReasonSeg 语境下的 gIoU 不应直接套用检测损失 GIoU 的定义。</li>
+<li><strong>J&amp;F：</strong>视频分割同时考察区域重叠与轮廓质量；看起来对象轮廓大致正确，仍可能因细边界失分。</li>
+<li><strong>AbsRel：</strong>预测深度与真值的绝对误差相对于真值深度的平均值，越小越好。0.63 不是“63% 深度正确”。</li>
+<li><strong>PSNR：</strong>以 dB 表示的像素保真指标，越高越好；对数刻度，不能把两个 dB 数值的比值解释成图像质量百分比。</li>
+<li><strong>Macro-F1：</strong>对类别分别算 F1 再平均，能暴露稀有类别的识别短板。图像编辑的 1–5 分、文生图的 Soft-TIFA GM 也各有独立评分口径。</li>
+</ul>
+</details>
+
+<h2 id="reading-reasoning">4 · 识别与推理：共享强项和新增能力在哪里</h2>
+<h3>4.1 阅读类任务最接近“通用模型的常规能力”</h3>
+<p>OCR 六个系统集中在 <strong>93.8–98.1</strong>，报告的人类参考为 <strong>98.0</strong>。文档与图表理解为 <strong>89.5–92.8</strong>，全部超过该行人类参考 <strong>89.3</strong>。这里的信号是多个系统同时取得高分，而不仅是某一个系统突出。</p>
+<p>但“看懂文字”没有带来全部感知任务饱和：Astra 视觉识别 <strong>77.0</strong>，人类参考 <strong>98.9</strong>；计数 <strong>82.7</strong> 对 <strong>94.0</strong>；细粒度区分 <strong>86.1</strong> 对 <strong>96.5</strong>。小差异、重复对象、需要视觉证据而不能只靠语义猜测的题目，仍然留下明显空间。</p>
+<h3>4.2 会算视觉数学题，不代表所有视觉逻辑都成熟</h3>
+<div class="table-wrap"><table><thead><tr><th scope="col">能力</th><th scope="col">Astra</th><th scope="col">其他系统最高</th><th scope="col">人类参考</th><th scope="col">怎么理解</th></tr></thead><tbody>
+<tr><th scope="row">视觉逻辑</th><td>81.1</td><td>67.5 · Qwen</td><td>87.0</td><td>对第二名 +13.6，但尚有差距。</td></tr>
+<tr><th scope="row">视觉数学</th><td>92.5</td><td>82.3 · Gemini</td><td>78.7</td><td>六个系统都达到或超过该参考。</td></tr>
+<tr><th scope="row">科学推理</th><td>86.8</td><td>82.3 · Qwen</td><td>88.6</td><td>领先 +4.5，距离人类参考 1.8。</td></tr>
+<tr><th scope="row">2D 空间</th><td>96.0</td><td>89.1 · Qwen</td><td>95.8</td><td>已达到该基准人类参考附近。</td></tr>
+<tr><th scope="row">3D／多视角</th><td>89.6</td><td>77.2 · Muse</td><td>94.1</td><td>对第二名 +12.4，仍低于人类。</td></tr>
+</tbody></table></div>
+<p><strong>解读：</strong>视觉数学和科学题可以调用强大的语言知识与符号推理；视觉逻辑、跨视角对应和精细区分要求持续抓住图像证据。主表支持这些任务成熟度不同，但不提供能证明“语言能力导致了多少视觉提升”的因果消融，因此不能把上面的直觉写成已证实的机制。</p>
+
+<h2 id="structured">5 · 从会描述到会输出：二维、三维与视频</h2>
+<h3>5.1 二维检测和分割，开始跨过传统专用模型的参考线</h3>
+<p>2D 检测使用 <b>F1@IoU=0.5</b>：Astra <strong>89.1</strong>、Qwen <strong>87.0</strong>，超过 Rex-Omni 的 <strong>78.4</strong>；其余四个系统为 <strong>31.1–69.7</strong>。因此这项能力已经在部分通用系统中出现，但远未成为所有模型的共有能力。</p>
+<p>图像分割中，Astra 为 <strong>81.3 gIoU</strong>，高于 SAM 3 Agent 的 <strong>77.0</strong>；2D 指代定位为 <strong>93.1</strong>，低于人类参考 <strong>96.2</strong>；姿态估计为 <strong>75.2 OKS AP</strong>，比第二名 Qwen 高 <strong>22.7</strong>，但仍低于 ViTPose++-L 的 <strong>83.6</strong>。</p>
+<figure class="figure" id="figure-2"><a href="assets/fig2-localization.webp" target="_blank" rel="noopener" aria-label="打开图 2 高清原图"><img src="assets/fig2-localization.webp" alt="拥挤场景中的车辆与食物检测，以及背部兔子纹身的细轮廓分割，比较真值和 Astra 输出。" width="1416" height="360" loading="lazy" decoding="async"></a><figcaption><strong>图 2 · 通用系统开始交付精细的二维结构。</strong>左侧看密集对象能否分开，中间与右侧看复杂轮廓。GT 表示人工真值。成功示例说明能力存在，整体水平仍需结合主表。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=4">原论文 Figure 2，p.4</a>。点击可查看高清图。</figcaption></figure>
+<p><strong>解读：</strong>“找到所有物体”“按一句复杂描述找到对象”“沿边缘勾出像素”“精确放置关节”对输出约束不同。图 2 说明通用系统已经能交付复杂结构化输出；它没有证明模型能以专用检测器的吞吐和成本完成实时部署，也不能推出在更严格 IoU 阈值下仍保持相同优势。</p>
+<h3>5.2 三维中的关键分界：对象级定位与度量级几何</h3>
+<p>3D 视觉定位可类比“在房间里指出那块黑板”。六个通用系统的 <strong>48.1–73.8</strong> 都超过所选模型参考 <strong>46.5</strong>，但人类参考达到 <strong>95.0</strong>。Astra 看似对模型参考大幅领先，换成人类参考，仍差 <strong>21.2</strong> 分。另一个任务 3D 检测的 Astra 为 <strong>17.3 AP3D</strong>，略高于 WildDet3D 的 <strong>16.8</strong>；这不意味着三维检测绝对水平已经很高。</p>
+<p>深度与重建呈现相反一面：深度 AbsRel 为 <strong>0.63</strong>，DA3 为 <strong>0.44</strong>；重建 Error 为 <strong>1.40</strong>，VGGT-1B 为 <strong>0.61</strong>。后一组意味着通用系统的误差约为参考的 <strong>2.30 倍</strong>。模型可能知道椅子在桌子前面，但还不能把每块表面的距离、尺度和相机视角关系都准确恢复出来。</p>
+<figure class="figure" id="figure-3"><a href="assets/fig3-geometry.webp" target="_blank" rel="noopener" aria-label="打开图 3 高清原图"><img src="assets/fig3-geometry.webp" alt="深度真值与预测、按描述定位黑板、三维目标框的对照；深度预测缺少精细表面与边界。" width="1416" height="333" loading="lazy" decoding="async"></a><figcaption><strong>图 3 · 找到对象，比恢复精确几何更成熟。</strong>左侧深度图恢复了大布局，却抹平局部细节；中间能找对黑板，右侧能输出连贯的 3D 框。三个任务的评分约束不同。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=4">原论文 Figure 3，p.4</a>。点击可查看高清图。</figcaption></figure>
+<h3>5.3 视频理解、事件定位、视频分割，是三个不同问题</h3>
+<p>视频理解的最佳系统是 <strong>Muse Spark 1.3：75.6</strong>，随后是 Astra <strong>74.3</strong>；模型参考 <strong>71.5</strong>，人类参考 <strong>82.6</strong>。时序定位问的是“事件从哪一刻到哪一刻发生”，Astra 的 <strong>38.6 R@1 IoU=0.7</strong> 高于 TRACE 的 <strong>35.9</strong>，但绝对数值依然有限。</p>
+<p>视频分割要求连续帧中逐像素维护对象：Astra <strong>84.5 J&amp;F</strong>，第二名 Fable 5 <strong>57.9</strong>，其他系统 <strong>32.0–34.9</strong>；专用 BEE 为 <strong>91.0</strong>。这是论文中最突出的通用系统间差距之一。剩下的困难是小结构、贴近的实例、细边界，以及这些区分能否跨帧稳定保持。</p>
+<figure class="figure" id="figure-4"><a href="assets/fig4-video.webp" target="_blank" rel="noopener" aria-label="打开图 4 高清原图"><img src="assets/fig4-video.webp" alt="视频分割真值与 Astra 预测对比，展示实例形状、相邻对象区分以及小结构边界的剩余误差。" width="1416" height="516" loading="lazy" decoding="async"></a><figcaption><strong>图 4 · 视频分割的剩余难点在细处。</strong>上排是真值，下排是 Astra。主体形状与多个实例已经能被捕捉，但小结构、贴近实例的分界还不够精确；这些区别还必须跨帧稳定维持。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=5">原论文 Figure 4，p.5</a>。点击可查看高清图。</figcaption></figure>
+<div class="callout"><p><strong>把三组结果连起来：</strong>能定位一个对象，并不等于能恢复它的精确几何；能讲清视频里发生了什么，也不等于能持续追踪每一条轮廓。衡量视觉能力时，必须把“答案对不对”和“结构是否精确、一致”同时纳入评测。</p></div>
+
+<h2 id="generation">6 · 图像生成与恢复：最直观的一道能力边界</h2>
+<p>在各自的组合系统设置下，Astra 的文生图为 <strong>96.2 Soft-TIFA GM</strong>，模型参考 <strong>92.6</strong>；指令编辑为 <strong>4.80 / 5</strong>，参考 <strong>4.64</strong>；图像质量评估为 <strong>86.2</strong>，参考 <strong>84.9</strong>。这些结果支持系统擅长理解创作意图、组织画面或判断观感。</p>
+<p>恢复任务则要求输出与<strong>同一真实场景的干净图像</strong>保持一致。主表里五个支持该项评测的系统只有 <strong>17.2–17.7 dB PSNR</strong>，而 MIRAGE 是 <strong>30.7 dB</strong>；Fable 5 标为 n/s。不能将这句话写成“六个系统都测得低分”。</p>
+<figure class="figure" id="figure-7"><a href="assets/fig7-restoration.webp" target="_blank" rel="noopener" aria-label="打开图 7 高清原图"><img src="assets/fig7-restoration.webp" alt="低光保龄球馆图像恢复对照：输入、Astra 与 Sunburst、MIRAGE、真值；放大区域显示生成系统增添球瓶并改变文字。" width="1416" height="645" loading="lazy" decoding="async"></a><figcaption><strong>图 7 · 漂亮不等于忠实，这是全篇最值得仔细看的失败例。</strong>从左到右是低光输入、Astra ＋ Sunburst、MIRAGE、真值；下排放大红框。数球瓶、看空球道和横幅文字，就能发现生成系统改动了原始内容。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=8">原论文 Figure 7，p.8</a>。点击可查看高清图。</figcaption></figure>
+<p>图 7 的低光增强例子来自 LOL-v1。Astra ＋ Sunburst 把四个球瓶变成五个、在空球道上补出额外球瓶，并改写横幅文字与球道编号。全图 PSNR／SSIM 是 <strong>17.5 dB／0.74</strong>，MIRAGE 为 <strong>28.1 dB／0.91</strong>。注意，这是一张图的结果，与主表跨恢复任务汇总的 <strong>17.7／30.7</strong> 不是同一组数。</p>
+<div class="formula"><strong>为什么 13 dB 的差距很大？</strong><br>PSNR = 10 log<sub>10</sub>(MAX² / MSE)。相同动态范围、相同评价条件下，低 13 dB 对应约 10<sup>1.3</sup> ≈ 20 倍的像素均方误差。主表是汇总分，因此这个换算只能帮助理解 dB 的量级，不能冒充逐图实测的平均 MSE 比。</div>
+<p><strong>解读：</strong>生成鼓励“合乎要求的新图像”，恢复要求“输入场景的忠实重建”。一个擅长补全合理细节的系统，可能恰好违反恢复任务最重要的约束。论文据此强调保真敏感任务需要专门评估；这些失败案例也比单看“画面更漂亮”更能解释为什么恢复仍是难点。</p>
+
+<h2 id="robotics-expert">7 · 机器人与专家领域：会推理不等于会执行、会辨别</h2>
+<h3>7.1 导航确实进入了闭环，但评测边界很明确</h3>
+<p>驾驶场景推理中，Astra 为 <strong>80.8</strong>，超过模型参考 <strong>73.1</strong>，仍低于人类参考 <strong>88.1</strong>。具身理解为 <strong>82.3</strong>，参考 Gemini Robotics-ER 2 为 <strong>78.5</strong>。机器人导航的成功率为 <strong>78%</strong>，第二名 Qwen 为 <strong>70%</strong>；该行没有模型或人类参考，不能纳入“达到参考水平”的统计。</p>
+<figure class="figure" id="figure-6"><a href="assets/fig6-navigation.webp" target="_blank" rel="noopener" aria-label="打开图 6 高清原图"><img src="assets/fig6-navigation.webp" alt="导航到枕头的仿真轨迹，包含受阻、后退和绕行；仅第一人称画面输入，17 步后距目标 0.95 米。" width="1416" height="654" loading="lazy" decoding="async"></a><figcaption><strong>图 6 · 看图、行动、再看图的闭环。</strong>受阻后模型后退、绕行，再接近枕头。左侧俯视图仅供读者看，模型看不到；其他五个模型未成功，指的是这一回合。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=7">原论文 Figure 6，p.7</a>。点击可查看高清图。</figcaption></figure>
+<p>图 6 展示 EB-Navigation／AI2-THOR 中接近枕头的一次成功轨迹：<strong>17 个动作、7 次模型调用、3 次受阻移动</strong>，最终距目标 <strong>0.95 m</strong>，进入 <strong>1 m</strong> 成功半径。系统只看第一人称 RGB，不接收地图、目标坐标或特权模拟器状态；图中的俯视轨迹供读者理解，模型看不到。</p>
+<p>其余五个系统未完成的是<strong>这一个展示回合</strong>，不是整个导航基准全部失败。78% 也只描述所评测的仿真设置，不能直接外推到真实机器人、接触操作或任意长程任务。</p>
+<h3>7.2 医学问答、器官定位、病理细分类，要分别看</h3>
+<p>医学理解：Astra <strong>86.0</strong>，模型参考 <strong>81.5</strong>，报告的人类参考 <strong>45.5</strong>。由于这些参考来自各自基准，不能由此概括成“全面超过医生”。2D 医学定位依然有明显差距：<strong>61.5 mAP@0.5</strong> 对 RadVLM 的 <strong>81.8</strong>。3D 医学定位则超过所选参考：<strong>73.9 mIoU</strong> 对 <strong>59.4</strong>。</p>
+<p>最难的是显微与病理：Astra <strong>23.8 Macro-F1</strong>，六个系统分布为 <strong>14.1–23.8</strong>，专用 HoVer-NeXt 为 <strong>57.1</strong>，人类为 <strong>82.0</strong>。模型可以画出细胞核的位置与轮廓，却分不清形态相近或少见的细胞核类型。<strong>定位能力和领域识别能力在这里发生了明显分离。</strong></p>
+<figure class="figure" id="figure-5"><a href="assets/fig5-medical.webp" target="_blank" rel="noopener" aria-label="打开图 5 高清原图"><img src="assets/fig5-medical.webp" alt="CT 胰腺三维定位、胸片病灶二维定位，以及病理细胞核边界与局部放大图。" width="1416" height="450" loading="lazy" decoding="async"></a><figcaption><strong>图 5 · 找到病灶、画出细胞核，仍不等于认清类别。</strong>左侧为胰腺 CT 多切面定位，中间为胸片病灶，右侧为细胞核。图内 0.66、0.80 等是展示样例标注，不是主表的整体成绩；细粒度类别判断仍明显落后。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=6">原论文 Figure 5，p.6</a>。点击可查看高清图。</figcaption></figure>
+<h3>7.3 遥感同样呈现“理解强，精确定位弱”</h3>
+<p>遥感推理最佳是 Gemini <strong>50.0</strong>，其次 Qwen <strong>48.2</strong>、Astra <strong>46.3</strong>，模型参考 <strong>43.9</strong>。遥感定位却是另一幅图景：最佳 Astra 只有 <strong>26.4 mIoU</strong>，RSRefSeg 2 为 <strong>75.5</strong>，差 <strong>49.1</strong> 分。大场景中的小目标、细尺度边界与领域差异，使“知道图里是什么”和“把目标精确圈出来”仍相距很远。</p>
+
+<h2 id="reasoning-tools">8 · 多想一会儿、用工具，值不值？</h2>
+<p>论文 Figure 8 分开比较了<strong>推理档位</strong>与<strong>工具使用</strong>。左侧以 low 为基线，观察 medium、high、xhigh、max；右侧固定 xhigh，对比使用与不使用工具。图中的分数与成本都是<strong>相对于各自基线的倍数</strong>，不是原始分数或美元账单。<a class="source" href="https://arxiv.org/pdf/2609.35718v1#page=9">[§6]</a></p>
+<figure class="figure" id="figure-8"><a href="assets/fig8-reasoning-cost.webp" target="_blank" rel="noopener" aria-label="打开图 8 高清原图"><img src="assets/fig8-reasoning-cost.webp" alt="不同推理档位的分数与成本倍数，以及 xhigh 下 OCR 和计数使用工具的变化。" width="1416" height="354" loading="lazy" decoding="async"></a><figcaption><strong>图 8 · 收益与成本必须一起读。</strong>黑色标注是分数倍数，红色是成本倍数。各小图纵轴范围不同且未从零开始，柱高会放大小幅差异，请以倍数标注为准；完整关键值见下表。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=9">原论文 Figure 8，p.9</a>。点击可查看高清图。</figcaption></figure>
+<div class="table-wrap"><table><thead><tr><th scope="col">比较</th><th scope="col">分数倍数</th><th scope="col">推理成本倍数</th><th scope="col">信息量</th></tr></thead><tbody>
+<tr><th scope="row">2D 空间：low → max</th><td>1.03×</td><td>4.28×</td><td>已较强的能力，额外收益很小。</td></tr>
+<tr><th scope="row">3D 检测：low → high</th><td>1.57×</td><td>8.93×</td><td>提升明显，成本也很高。</td></tr>
+<tr><th scope="row">3D 检测：low → xhigh</th><td>1.53×</td><td>13.22×</td><td>比 high 更贵，结果却略低。</td></tr>
+<tr><th scope="row">3D 检测：low → max</th><td>1.75×</td><td>6.75×</td><td>该图中的成本不随档位单调增加。</td></tr>
+<tr><th scope="row">分割：low → medium</th><td>1.05×</td><td>1.77×</td><td>早期收益已较充分。</td></tr>
+<tr><th scope="row">分割：low → max</th><td>1.04×</td><td>8.33×</td><td>更高档位没有持续改善。</td></tr>
+<tr><th scope="row">OCR：不用 → 用工具</th><td>1.01×</td><td>1.04×</td><td>小幅收益，较低额外成本。</td></tr>
+<tr><th scope="row">计数：不用 → 用工具</th><td>1.04×</td><td>1.20×</td><td>先标出个体、再计数的工具路径有效。</td></tr>
+</tbody></table></div>
+<p>这张图最值得注意的是<strong>非单调性</strong>：推理档位名称更高，实测分数不一定更高，实测成本也不必更高。论文没有给出足以解释 max 比 xhigh 更便宜的详细预算、token 分解或方差；应忠实报告这一现象，不能自行补一个原因。1.03× 也表示相对分数提高约 3%，不是固定增加 3 个百分点。</p>
+<p>作者还讨论了专用模型作为工具的分工：分割辅助计数、深度辅助距离比较、专用遥感定位模型处理小目标、图像模型承接生成与编辑。正文没有给出每条组合路线完整的前后成绩和成本表，因此“专用工具可补短板”是有示例支持的方向，尚不是每个任务都已验证的统一最优方案。</p>
+<div class="callout"><p><strong>解读：应按任务选择预算与工具。</strong>如果问题只是读取清晰文字，昂贵的最高推理档未必划算；如果要推断三维位置和朝向，增加推理可能更有用；如果要精确深度或忠实恢复像素，先测专用模型提供的输出往往更值得。最终应比较成功率、成本、延迟与失败类型，而不只是档位名称。</p></div>
+
+<h2 id="maturity">9 · 成熟度地图：参考线一换，结论就可能反转</h2>
+<p>作者把最佳通用模型的分数相对于参考值归一化，再划分四档：<strong>&gt;110%</strong> 为超过参考、<strong>100–110%</strong> 为达到参考、<strong>85–100%</strong> 为接近、<strong>&lt;85%</strong> 为仍有明显差距。边界 100% 归入“达到”。高分更好的指标用“通用分数 ÷ 参考分数”，误差指标反过来。它是读图辅助，不是“任务被解决的百分比”。</p>
+<div class="formula">越高越好：成熟度读数 = 最佳通用模型 / 参考值 × 100%<br>越低越好：成熟度读数 = 参考值 / 最佳通用模型 × 100%</div>
+<div class="table-wrap"><table><thead><tr><th scope="col">同一能力</th><th scope="col">相对模型参考</th><th scope="col">相对人类参考</th><th scope="col">结论变化</th></tr></thead><tbody>
+<tr><th scope="row">视觉识别</th><td>77.0 / 61.1 ≈ 126.0%</td><td>77.0 / 98.9 ≈ 77.9%</td><td>超过所选模型，但距人类仍远。</td></tr>
+<tr><th scope="row">3D 视觉定位</th><td>73.8 / 46.5 ≈ 158.7%</td><td>73.8 / 95.0 ≈ 77.7%</td><td>领先早期通用参考，不代表达到人类。</td></tr>
+<tr><th scope="row">视频理解</th><td>75.6 / 71.5 ≈ 105.7%</td><td>75.6 / 82.6 ≈ 91.5%</td><td>用的是最佳 Muse 分数；换人类参考后为“接近”。</td></tr>
+</tbody></table></div>
+<p>按 Table 1 逐行采用<strong>最强可用参考</strong>重新计算，33 个有参考的能力分为：<strong>4 项超过、11 项达到、10 项接近、8 项明显差距</strong>；导航无参考，不参与分档。这是本文复算，和原 Figure 9 的 <strong>5／11／10／7</strong> 不同，原因是原图的视觉识别使用了更弱的模型参考。</p>
+<details><summary>查看原 Figure 9：保留作者的成熟度图，并注意视觉识别的参考选择</summary>
+<figure class="figure" id="figure-9"><a href="assets/fig9-maturity-original.webp" target="_blank" rel="noopener" aria-label="打开图 9 高清原图"><img src="assets/fig9-maturity-original.webp" alt="原论文成熟度排序图，将最佳通用分数与参考比较；视觉识别一行使用模型参考而非更强的人类参考。" width="1110" height="1083" loading="lazy" decoding="async"></a><figcaption><strong>图 9 · 原论文成熟度图，未经数值修改。</strong>S 为模型参考，H 为人类参考。视觉识别的 126% 采用了模型参考 61.1，与图注“选择更强参考”不一致；本文统一口径时将其重算为 77.9%。PSNR 等异质指标的比值也不能当成统一质量尺度。 来源：<a href="https://arxiv.org/pdf/2609.35718v1#page=10">原论文 Figure 9，p.10</a>。点击可查看高清图。</figcaption></figure>
+</details>
+<p>此外，PSNR 是对数刻度，编辑评分有自己的量表，Accuracy 还会受题目与人类测试条件影响。把 <strong>17.7 / 30.7 ≈ 58%</strong> 称为“恢复能力达到 58%”会产生误导；深度误差的倒数比、问答准确率比，也不构成跨任务可平均的统一质量尺度。<strong>成熟度图适合指路，最终判断仍应回到原始指标、参考来源和失败案例。</strong></p>
+
+<h2 id="audit">10 · 论文有哪些口径冲突与证据边界</h2>
+<p>完整解读需要保留主张，也需要核对支持它的证据。下面列的是本次阅读 v1 时能直接定位的冲突，不替作者猜测哪一版实验才是最终版本。</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">位置／问题</th><th scope="col">原文不一致之处</th><th scope="col">本文处理</th></tr></thead><tbody>
+<tr><th scope="row">Figure 9 视觉识别</th><td>图注称取模型／人类中更强参考，实际用 61.1 得到 126%；Table 1 另有 98.9 的人类参考。</td><td>强参考重算为 77.9%；作者项目页的 data.js 也显式保留此项模型参考覆盖。</td></tr>
+<tr><th scope="row">§3 的 OCR 与 2D 定位</th><td>正文 OCR 下限写 93.7，主表为 93.8；2D 定位的人类分数在正文写 96.0，主表为 96.2。</td><td>使用 93.8 与 96.2。</td></tr>
+<tr><th scope="row">§3 的视频结果</th><td>正文出现 72.6–76.3 对 73.3；主表视频理解是 53.0–75.6，模型参考 71.5。正文还写视频分割落后 7.9 分。</td><td>采用主表；视频分割差为 91.0 − 84.5 = 6.5 分。</td></tr>
+<tr><th scope="row">§6 的分割结论</th><td>文字说更高推理仍未弥合专用分割差距；Table 1 图像分割 81.3 已高于参考 77.0。</td><td>Figure 8 只支持其自身的相对增益与成本；具体子集／设置未交代，不能替作者把两种口径合并。</td></tr>
+<tr><th scope="row">§8 的基准列表</th><td>55 项清单包含 GenEval2、ImageEditBench；后文输出处理另提 DPG-Bench。</td><td>保留原列 55 项，提示配置映射需评测代码确认。</td></tr>
+</tbody></table></div>
+<h3>10.1 结果可信度还能补哪些信息</h3>
+<ul>
+<li><strong>逐基准配置与样本：</strong>哪些任务用了全量、哪些抽样，样本 ID、图像分辨率、视频抽帧、聚合权重是什么？这些影响能力行之间的可比性。</li>
+<li><strong>系统边界与工具权限：</strong>每个结果用了什么具体 API 快照、提示词、推理档位、工具和重试策略？相同指令不自动意味着相同执行路径。</li>
+<li><strong>波动与不确定性：</strong>文中没有提供足够的逐项置信区间或重复运行方差。0.1、0.5 等小差距不能直接称为稳定优势或统计显著。</li>
+<li><strong>预算与效率：</strong>Figure 8 有相对成本，没有覆盖全部任务的统一绝对成本、端到端延迟、吞吐和工具开销。主表不支持部署性价比排名。</li>
+<li><strong>参考与数据污染：</strong>参考值来自不同工作与测试条件；专有训练集未知。正文未给出完整污染审计，不能排除熟悉测试内容对分数的影响。</li>
+</ul>
+<h3>10.2 开源状态：链接存在，不代表评测已可复现</h3>
+<p>截至本次核查（2026-10-04），论文链接的 <a href="https://github.com/mbzuai-oryx/frontier-vision">GitHub 仓库</a> main 分支递归文件列表只有 <code>README.md</code> 和 <code>assets/hero.png</code>。作者项目页提供交互式成绩、案例和前端数据，但公开仓库中尚未看到评测脚本、完整 prompts、样本清单或运行配置。<strong>当前可以核对论文结果与展示，尚不能仅依靠该仓库完整复跑。</strong></p>
+<div class="callout caution"><p><strong>这些限制不抹去论文的价值。</strong>跨领域主表与失败案例清晰显示了能力分布；它们限制的是结论能外推多远，以及具体领先幅度有多稳定。尤其不要把“超越一个所选参考”改写成“解决整个计算机视觉任务”。</p></div>
+
+<h2 id="implications">11 · 对模型、评测和系统设计的启示</h2>
+<p class="eyebrow">以下为基于论文结果的解读与建议</p>
+<h3>11.1 把“看得懂”与“交付得准”分别作为目标</h3>
+<p>一个问答高分模型可能在边界、尺度、对应和实例身份上失败。后续评测应同时报告语义答案、对象定位、几何误差、像素保真与跨帧一致性。对于“识别得很准”的宣传，进一步追问它能否正确计数、区分相近对象、把结构以指定精度输出，会得到更完整的能力画像。</p>
+<h3>11.2 值得优先研究的，不只是再堆通用问答</h3>
+<div class="grid2"><div class="card"><h3>度量与几何约束</h3><p>绝对尺度、多视角一致性、相机与物体关系、局部表面细节。3D 推理问答提升之后，这些约束仍没有自动满足。</p></div><div class="card"><h3>保真与时序约束</h3><p>让输出可追溯到输入证据：不凭空补物体、不改写文字，跨帧保留细边界与实例区分。</p></div><div class="card"><h3>专家细粒度识别</h3><p>让定位、形态特征与类别判断建立联系，并检查少见类别；“知道医学知识”不能替代显微视觉训练。</p></div><div class="card"><h3>可验证的工具调度</h3><p>学习何时直接回答、何时调用专用模型、何时检查输出。除成功率外，同时量化预算与调用失败。</p></div></div>
+<h3>11.3 一个可操作的通用模型＋专用工具方案</h3>
+<div class="flow" role="img" aria-label="系统设计建议：识别任务约束，选择直接推理或专用工具，核验输出，按质量成本延迟选择策略">
+<div><b>① 识别约束 →</b><span>语义答案？准确尺寸？<br>保真图像？连续掩码？</span></div><div><b>② 选择执行路径 →</b><span>直接推理，或调用<br>深度／分割／恢复工具</span></div><div><b>③ 核验输出 →</b><span>重投影、边界、一致性<br>与原图证据对齐</span></div><div><b>④ 记录取舍</b><span>质量、成本、延迟<br>失败后是否重试</span></div></div>
+<p>这张流程图是本文建议，并非论文已实现的新方法。一个合理的起点是保留强通用系统做任务理解与调度，让专用模型处理仍有稳定优势的几何、恢复、密集对应和稀有领域任务，再用可计算的约束检查结果。</p>
+<p>联系本站的 <a href="/research/locate-anything/">LocateAnything 解读</a>，可以继续追问定位精度、解码形式与吞吐；联系 <a href="/research/code-as-worlds/">Code as Worlds</a> 与 <a href="/research/quantiphy/">QuantiPhy</a>，可以把“会解释物理现象”推进到“能恢复可执行机制并给出可检验数值”。这篇论文给出的能力边界，恰好说明了这些研究方向仍有必要。</p>
+<p class="lead"><strong>这篇论文最有价值的贡献，是把“通用视觉很强”拆成可以核查的不同任务：</strong>有些工作已经能通过自然语言接口完成，有些工作还必须认真对待尺度、像素、时间与领域知识。选择模型与研究问题时，应从这些具体约束出发。</p>
+
+<h2 id="sources">12 · 来源与阅读索引</h2>
+<ol class="refs">
+<li><a href="https://arxiv.org/abs/2609.35718v1">论文摘要与版本记录</a>：2026-09-28 提交的 v1；本次阅读的 PDF 共 18 页，正文、额外评测细节和结论到第 12 页，参考文献从第 12 页开始。</li>
+<li><a href="https://arxiv.org/pdf/2609.35718v1">论文 PDF</a>：§1–2 为问题与设置；Table 1（p.3）为完整成绩；§3–5 为能力边界；§6／Figure 8（p.9）为推理与工具；§7／Figure 9（p.10）为成熟度；§8／Table 2（pp.11–12）为指标、参考模型与输出处理；§9 为结论。</li>
+<li><a href="https://mbzuai-oryx.github.io/frontier-vision/">作者项目页</a>与<a href="https://mbzuai-oryx.github.io/frontier-vision/js/data.js">成绩前端数据</a>：用于交叉核对主表与参考选择。本文对原 Figure 9 的视觉识别参考选择作了明确区分。</li>
+<li><a href="https://github.com/mbzuai-oryx/frontier-vision">作者 GitHub 仓库</a>：开源状态按 2026-10-04 所见记录，后续可能更新。</li>
+<li><a href="assets/scores.json">本站成绩数据</a>：逐项来源记录在文件内。图 1–9 均裁自论文原图并保留编号，版权归原作者；中文流程图、指标解释、复算与分析由本文整理。点击原图可打开本地高清版本。</li>
+</ol>
+<p class="source">整理日期：2026-10-04。本文为论文解读，没有重新运行模型或复现实验；“最佳”“超过”“落后”均限定在论文所报告的任务设置与参考范围内。</p>
+<a class="back" href="/#research">← 返回调研与解读</a>
+</article></main><footer class="footer"><p>© 2026 Caesar-s1mple · 本文整理自论文与作者公开资料 · 勘误可在 <a href="https://github.com/Caesar-s1mple/Caesar-s1mple.github.io/issues">GitHub 仓库</a>提出</p><p class="egg">理解语义，也认真对待每一个像素。</p></footer></body></html>
