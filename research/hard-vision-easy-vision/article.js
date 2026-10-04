@@ -76,6 +76,8 @@ async function enableExplorer() {
       (row.id === 'restoration' ? ' PSNR 为对数刻度，长度比例不代表图像质量比例。' : '');
     const referenceText = references.map(item => `${item.label}：${format(item.value, row)}（${item.name}）`).join('；');
     document.getElementById('chart-reference').textContent = referenceText || '该项没有报告模型或人类参考。';
+    document.getElementById('chart-benchmarks').textContent = row.benchmark_context;
+    document.getElementById('chart-benchmark-link').href = `#${row.benchmark_section}`;
     let summary = `最佳通用系统为 ${winner}（${format(best, row)}）。`;
     if (reference) {
       const gap = row.lower ? reference.value - best : best - reference.value;

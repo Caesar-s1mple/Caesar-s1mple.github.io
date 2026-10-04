@@ -27,7 +27,9 @@
       "human": 98.9,
       "zh": "视觉识别",
       "reference_name": "SEAL / Gemini 3 Pro",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reading",
+      "benchmark_context": "相关来源：MMStar、WorldVQA、V*Bench、RealWorldQA、PerceptionBench；逐行组合与权重未公开。"
     },
     {
       "id": "finegrained",
@@ -47,7 +49,9 @@
       "human": 96.5,
       "zh": "细粒度区分",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reading",
+      "benchmark_context": "相关任务见 BLINK、BabyVision、BlindTest、PerceptionBench；进入该行的具体子集未公开。"
     },
     {
       "id": "counting",
@@ -67,7 +71,9 @@
       "human": 94.0,
       "zh": "视觉计数",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reading",
+      "benchmark_context": "计数相关基准：PixMo-Count、CountQA；VLMsAreBiased 涉及视觉偏差，具体划分未公开。"
     },
     {
       "id": "ocr",
@@ -87,7 +93,9 @@
       "human": 98.0,
       "zh": "OCR 与文字识别",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reading",
+      "benchmark_context": "主表 OCR 行的独立基准／子集未逐项列明；不能与 Figure 8 的 CharXiv RQ＋InfoVQA 组合混用。"
     },
     {
       "id": "documents",
@@ -107,7 +115,9 @@
       "human": 89.3,
       "zh": "文档与图表理解",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reading",
+      "benchmark_context": "相关基准：InfoVQA（信息图问答）、CharXiv（科研图表理解）；具体聚合未公开。"
     },
     {
       "id": "logical",
@@ -127,7 +137,9 @@
       "human": 87.0,
       "zh": "视觉逻辑推理",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reasoning",
+      "benchmark_context": "相关来源：BabyVision、VisualPuzzles、ZeroBench，以及 BLINK／VisFactor 的相关任务；子集权重未公开。"
     },
     {
       "id": "math",
@@ -147,7 +159,9 @@
       "human": 78.7,
       "zh": "视觉数学推理",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reasoning",
+      "benchmark_context": "任务对应：MathVista、MathVision（视觉数学推理）；主表为能力级分数。"
     },
     {
       "id": "scientific",
@@ -167,7 +181,9 @@
       "human": 88.6,
       "zh": "科学推理",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reasoning",
+      "benchmark_context": "相关基准：MMMU-Pro（跨学科专业推理）；具体学科子集未逐项公开。"
     },
     {
       "id": "spatial2d",
@@ -187,7 +203,9 @@
       "human": 95.8,
       "zh": "2D 空间推理",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reasoning",
+      "benchmark_context": "相关来源：OmniSpatial、VisFactor、BLINK、VisualPuzzles、V*Bench；Figure 8 的明确组合另见第 8 节。"
     },
     {
       "id": "spatial3d",
@@ -207,7 +225,9 @@
       "human": 94.1,
       "zh": "3D 与多视角推理",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-reasoning",
+      "benchmark_context": "相关来源：MindCube-Tiny、MMSI-Bench 与 BLINK 的相关任务；问答不等于直接输出几何。"
     },
     {
       "id": "detection",
@@ -227,7 +247,9 @@
       "human": null,
       "zh": "2D 目标检测",
       "reference_name": "Rex-Omni",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-2d",
+      "benchmark_context": "任务对应：Dense200（拥挤场景的密集目标检测）；Rex-Omni 是模型参考。"
     },
     {
       "id": "grounding",
@@ -247,7 +269,9 @@
       "human": 96.2,
       "zh": "2D 视觉定位",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-2d",
+      "benchmark_context": "相关基准：RefCOCO（对象指代定位）、ScreenSpotPro（专业界面定位）；子集与聚合未公开。"
     },
     {
       "id": "segmentation",
@@ -267,7 +291,9 @@
       "human": null,
       "zh": "图像分割",
       "reference_name": "SAM 3 Agent",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-2d",
+      "benchmark_context": "任务对应：ReasonSeg（按推理式文本指令生成像素掩码）；SAM 3 Agent 是模型参考。"
     },
     {
       "id": "pose2d",
@@ -287,7 +313,9 @@
       "human": null,
       "zh": "2D 姿态估计",
       "reference_name": "ViTPose++-L",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-2d",
+      "benchmark_context": "任务对应：OCHuman（严重遮挡场景的人体关键点）；ViTPose++-L 是模型参考。"
     },
     {
       "id": "depth",
@@ -307,7 +335,9 @@
       "human": null,
       "zh": "深度估计",
       "reference_name": "DA3",
-      "digits": 2
+      "digits": 2,
+      "benchmark_section": "bench-geometry",
+      "benchmark_context": "任务对应：DIODE（室内／室外深度估计）；DA3 是模型参考，具体评测 split 未公开。"
     },
     {
       "id": "detection3d",
@@ -327,7 +357,9 @@
       "human": null,
       "zh": "3D 目标检测",
       "reference_name": "WildDet3D",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-geometry",
+      "benchmark_context": "任务对应：Omni3D（真实图像中的三维目标检测）；WildDet3D 是模型参考。"
     },
     {
       "id": "grounding3d",
@@ -347,7 +379,9 @@
       "human": 95.0,
       "zh": "3D 视觉定位",
       "reference_name": "Gemini-2.5-Pro",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-geometry",
+      "benchmark_context": "任务对应：Anywhere3Dv2（按语言指代进行三维场景定位）；具体子集未公开。"
     },
     {
       "id": "reconstruction",
@@ -367,7 +401,9 @@
       "human": null,
       "zh": "3D 重建",
       "reference_name": "VGGT-1B",
-      "digits": 2
+      "digits": 2,
+      "benchmark_section": "bench-geometry",
+      "benchmark_context": "任务对应：ETH3D（多视角几何重建）；VGGT-1B 是模型参考，具体评测 split 未公开。"
     },
     {
       "id": "video",
@@ -387,7 +423,9 @@
       "human": 82.6,
       "zh": "视频理解",
       "reference_name": "GPT4-o1 / Cambrian-S-7B",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-video",
+      "benchmark_context": "相关基准：MMVU（跨学科视频理解）、VSI-Bench（视频空间推理）；聚合权重未公开。"
     },
     {
       "id": "temporal",
@@ -407,7 +445,9 @@
       "human": null,
       "zh": "时序定位",
       "reference_name": "TRACE",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-video",
+      "benchmark_context": "任务对应：ActivityNet（视频事件区间定位）；论文未明确具体标注子集。"
     },
     {
       "id": "videoseg",
@@ -427,7 +467,9 @@
       "human": null,
       "zh": "视频分割",
       "reference_name": "BEE",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-video",
+      "benchmark_context": "任务对应：DAVIS（视频对象分割）；看逐帧区域与轮廓质量。"
     },
     {
       "id": "t2i",
@@ -447,7 +489,9 @@
       "human": null,
       "zh": "文生图",
       "reference_name": "Structured Conditioning + Qwen-Image",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-generation",
+      "benchmark_context": "清单列 GenEval2；输出处理另提 DPG-Bench，但未交代两者和主表的聚合关系。"
     },
     {
       "id": "editing",
@@ -467,7 +511,9 @@
       "human": null,
       "zh": "指令图像编辑",
       "reference_name": "Boogu-Image-0.1-Edit-Thinking",
-      "digits": 2
+      "digits": 2,
+      "benchmark_section": "bench-generation",
+      "benchmark_context": "清单列 ImageEditBench；所引文献题名为 ImgEdit，任务为按指令编辑已有图片。"
     },
     {
       "id": "restoration",
@@ -487,7 +533,9 @@
       "human": null,
       "zh": "图像恢复",
       "reference_name": "MIRAGE",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-generation",
+      "benchmark_context": "相关基准：BSD68、Urban100、Rain100L、SOTS、GoPro、LOL-v1；图 7 明确为 LOL-v1。"
     },
     {
       "id": "quality",
@@ -507,7 +555,9 @@
       "human": null,
       "zh": "图像质量评估",
       "reference_name": "CoInstruct / UniPercept",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-generation",
+      "benchmark_context": "相关基准：Q-Bench2、UniPercept（质量及感知属性判断）；不输出恢复后的图像。"
     },
     {
       "id": "driving",
@@ -527,7 +577,9 @@
       "human": 88.1,
       "zh": "驾驶场景推理",
       "reference_name": "Qwen-Drive-1.0-SFT / GPT4-o1",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-robotics",
+      "benchmark_context": "相关基准：LingoQA、DrivingVQA（驾驶场景问答）；不等于闭环车辆控制。"
     },
     {
       "id": "embodied",
@@ -547,7 +599,9 @@
       "human": null,
       "zh": "具身理解",
       "reference_name": "Gemini Robotics-ER 2",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-robotics",
+      "benchmark_context": "任务对应：ERQA（机器人场景的具身推理问答）。"
     },
     {
       "id": "navigation",
@@ -567,7 +621,9 @@
       "human": null,
       "zh": "机器人导航",
       "reference_name": "未报告",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-robotics",
+      "benchmark_context": "相关基准：EmbodiedBench；图 6 明确展示 EB-Navigation／AI2-THOR。"
     },
     {
       "id": "medical",
@@ -587,7 +643,9 @@
       "human": 45.5,
       "zh": "医学理解",
       "reference_name": "GPT-5.6 Sol",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-medical",
+      "benchmark_context": "相关基准：MedXpertQA-MM、MMMU-Pro-Med（医学多模态问答）；聚合权重未公开。"
     },
     {
       "id": "medground2d",
@@ -607,7 +665,9 @@
       "human": null,
       "zh": "2D 医学定位",
       "reference_name": "RadVLM",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-medical",
+      "benchmark_context": "任务对应：MS-CXR（文本描述与胸片病灶的区域定位）。"
     },
     {
       "id": "medground3d",
@@ -627,7 +687,9 @@
       "human": null,
       "zh": "3D 医学定位",
       "reference_name": "M3D-LaMed-Llama-2-7B",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-medical",
+      "benchmark_context": "相关基准：M3D-Bench 的三维医学定位任务；不代表其全部任务的统一得分。"
     },
     {
       "id": "pathology",
@@ -647,7 +709,9 @@
       "human": 82.0,
       "zh": "显微与病理",
       "reference_name": "HoVer-NeXt",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-medical",
+      "benchmark_context": "任务对应：PUMA（病理细胞核与组织）；本行用 Macro-F1 衡量细粒度识别。"
     },
     {
       "id": "remote",
@@ -667,7 +731,9 @@
       "human": null,
       "zh": "遥感推理",
       "reference_name": "GPT-5.4",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-remote",
+      "benchmark_context": "任务对应：VLRS-Bench（遥感视觉语言推理）。"
     },
     {
       "id": "remoteground",
@@ -687,7 +753,9 @@
       "human": null,
       "zh": "遥感定位",
       "reference_name": "RSRefSeg 2",
-      "digits": 1
+      "digits": 1,
+      "benchmark_section": "bench-remote",
+      "benchmark_context": "任务对应：RefSegRS（遥感图像的指代分割）；RSRefSeg 2 是模型参考。"
     }
   ]
 }
